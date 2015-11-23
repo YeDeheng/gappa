@@ -1,0 +1,19 @@
+commit 040c478e362906fa4da73c51bee1dc684cfa5325
+Author: Guillaume Melquiond <guillaume.melquiond@inria.fr>
+Date:   Tue Mar 25 08:23:28 2014 +0100
+
+    Fix incorrect computation of floating-point ulp for dyadic numbers with a minimal exponent.
+
+diff --git a/src/arithmetic/float.cpp b/src/arithmetic/float.cpp
+index 63e2102..04107ce 100644
+--- a/src/arithmetic/float.cpp
++++ b/src/arithmetic/float.cpp
+@@ -124,7 +124,7 @@ static int exponent(number const &n, float_format const &f) {
+   mpz_init(m);
+   split_exact(n.data->val, m, e, s);
+   if (s == 0) e = f.min_exp;
+-  else if (e != f.min_exp) {
++  else {
+     e -= f.prec - mpz_sizeinbase(m, 2);
+     if (e < f.min_exp) e = f.min_exp;
+   }

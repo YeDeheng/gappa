@@ -1,0 +1,183 @@
+<para>These sections explain how rounding operators and back-ends are defined
+in the tool. They are meant for developers rather than users of Gappa and
+involve manipulating C++ classes defined in the <filename>src/arithmetic</filename>
+and <filename>src/backends</filename> directories.</para>
+
+<section>
+<title>Defining a generator for a new formal system</title>
+
+<para>To be written.</para>
+</section>
+
+<section>
+<title>Defining rounding operators for a new arithmetic</title>
+
+<section>
+<title>Function classes</title>
+
+<para>A function derives from the <code>function_class</code> class. This
+class is an interface to the name of the function, its associated real
+operator, and six theorems.</para>
+
+<programlisting language="cpp"><![CDATA[struct function_class
+{
+  function_class(real_op_type t, int mask);
+  virtual interval round                         (interval const &, std::string &) const;
+  virtual interval enforce                       (interval const &, std::string &) const;
+  virtual interval absolute_error                                  (std::string &) const;
+  virtual interval relative_error                                  (std::string &) const;
+  virtual interval absolute_error_from_exact_bnd (interval const &, std::string &) const;
+  virtual interval absolute_error_from_exact_abs (interval const &, std::string &) const;
+  virtual interval absolute_error_from_approx_bnd(interval const &, std::string &) const;
+  virtual interval absolute_error_from_approx_abs(interval const &, std::string &) const;
+  virtual interval relative_error_from_exact_bnd (interval const &, std::string &) const;
+  virtual interval relative_error_from_exact_abs (interval const &, std::string &) const;
+  virtual interval relative_error_from_approx_bnd(interval const &, std::string &) const;
+  virtual interval relative_error_from_approx_abs(interval const &, std::string &) const;
+  virtual std::string description() const = 0;
+  virtual std::string pretty_name() const = 0;
+  virtual ~function_class();
+};]]></programlisting>
+
+<para>The <code>description</code> function should return the internal
+name of the rounding operator. It will be used when generating the
+notations of the proof. When the generated notation cannot be reduced to
+a simple name, comma-separated additional parameters can be appended. The
+back-end will take care of formatting the final string. This remark also
+applies to names returned by the theorem methods (see below). The
+<code>pretty_name</code> function returns a name that can be used in
+messages displayed to the user. Ideally, this string can be reused in an
+input script.</para>
+
+<para>The <code>real_op_type</code> value is the associated real operator. This will be
+<code>UOP_ID</code> (the unary identity function) for standard rounding
+operators. But it can be more complex if needed:</para>
+
+<programlisting language="cpp"><![CDATA[enum real_op_type { UOP_ID, UOP_NEG, UOP_ABS, BOP_ADD, BOP_SUB, BOP_MUL, BOP_DIV, ... };]]></programlisting>
+
+<para>The type will indicate to the parser the number of arguments the function
+requires. For example, if the <code>BOP_DIAM</code> type is associated to the
+function <code>f</code>, then <code>f</code> will be parsed as a binary
+function. But the type is also used by the rewriting engines in order to derive
+default rules for this function. These rules involve the associated real
+operator (the diamond in this example).</para>
+
+<texinformal>f(a, b) - c \diamond d \quad\longrightarrow\quad
+(f(a, b) - a \diamond b) + (a \diamond b - c \diamond d)</texinformal>
+<texinformal>\frac{f(a, b) - c \diamond d}{c \diamond d} \quad\longrightarrow\quad
+\frac{f(a, b) - a \diamond b}{a \diamond b} +
+\frac{a \diamond b - c \diamond d}{c \diamond d} +
+\frac{f(a, b) - a \diamond b}{a \diamond b} \cdot
+\frac{a \diamond b - c \diamond d}{c \diamond d}</texinformal>
+
+<para>For these rules and the following theorems to be useful, the expressions
+<texinline>f(a, b)</texinline> and <texinline>a \diamond b</texinline> have to
+be close to each other. Bounding their distance is the purpose of the last ten
+theorems. The first two theorems compute the range of <texinline>f(a, b)</texinline>
+itself.</para>
+
+<para>It is better for the proof engine not to consider theorems that never
+return a useful range. The <code>mask</code> argument of the <code>function_class</code>
+constructor is a combination of the following flags. They indicate which
+theorems are known. The corresponding methods should therefore have been overloaded.</para>
+
+<programlisting language="cpp"><![CDATA[struct function_class
+{
+  static const int TH_RND, TH_ENF, TH_ABS, TH_REL,
+    TH_ABS_EXA_BND, TH_ABS_EXA_ABS, TH_ABS_APX_BND, TH_ABS_APX_ABS,
+    TH_REL_EXA_BND, TH_REL_EXA_ABS, TH_REL_APX_BND, TH_REL_APX_ABS;
+};]]></programlisting>
+
+<para>All the virtual methods for theorems have a similar specification.
+If the result is the undefined interval <code>interval()</code>, the
+theorem does not apply. Otherwise, the last parameter is updated with the
+name of the theorem that was used for computing the returned interval.
+The proof generator will then generate an internal node from the two
+intervals and the name. When defining a new rounding operator,
+overloading does not have to be comprehensive; some functions may be
+ignored and the engine will work around the missing theorems.</para>
+
+<variablelist>
+<varlistentry><term><code>round</code></term>
+<listitem><para>Given the range of <texinline>a \diamond b</texinline>, compute the
+range of <texinline>f(a, b)</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>enforce</code></term>
+<listitem><para>Given the range of <texinline>f(a, b)</texinline>, compute a stricter
+range of it.</para></listitem></varlistentry>
+<varlistentry><term><code>absolute_error</code></term>
+<listitem><para>Given no range, compute the range of
+<texinline>f(a, b) - a \diamond b</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>relative_error</code></term>
+<listitem><para>Given no range, compute the range of
+<texinline>\frac{f(a, b) - a \diamond b}{a \diamond b}</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>absolute_error_from_exact_bnd</code></term>
+<listitem><para>Given the range of <texinline>a \diamond b</texinline>, compute the
+range of <texinline>f(a, b) - a \diamond b</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>absolute_error_from_exact_abs</code></term>
+<listitem><para>Given the range of <texinline>|a \diamond b|</texinline>, compute the
+range of <texinline>f(a, b) - a \diamond b</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>absolute_error_from_approx_bnd</code></term>
+<listitem><para>Given the range of <texinline>f(a, b)</texinline>, compute the
+range of <texinline>f(a, b) - a \diamond b</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>absolute_error_from_approx_abs</code></term>
+<listitem><para>Given the range of <texinline>|f(a, b)|</texinline>, compute the
+range of <texinline>f(a, b) - a \diamond b</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>relative_error_from_exact_bnd</code></term>
+<listitem><para>Given the range of <texinline>a \diamond b</texinline>, compute the
+range of <texinline>\frac{f(a, b) - a \diamond b}{a \diamond b}</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>relative_error_from_exact_abs</code></term>
+<listitem><para>Given the range of <texinline>|a \diamond b|</texinline>, compute the
+range of <texinline>\frac{f(a, b) - a \diamond b}{a \diamond b}</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>relative_error_from_approx_bnd</code></term>
+<listitem><para>Given the range of <texinline>f(a, b)</texinline>, compute the
+range of <texinline>\frac{f(a, b) - a \diamond b}{a \diamond b}</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>relative_error_from_approx_abs</code></term>
+<listitem><para>Given the range of <texinline>|f(a, b)|</texinline>, compute the
+range of <texinline>\frac{f(a, b) - a \diamond b}{a \diamond b}</texinline>.</para></listitem></varlistentry>
+</variablelist>
+
+<para>The <code>enforce</code> theorem is meant to trim the bounds of a range.
+For example, if this expression is an integer between 1.7 and 3.5, then it is
+also a real number between 2 and 3. This property is especially useful when doing a
+dichotomy resolution, since some of the smaller intervals may be reduced to a
+single exact value through this theorem.</para>
+
+<para>Since the undefined interval is used when a theorem does not apply, it
+cannot be used by <code>enforce</code> to flag an empty interval in case of a
+contradiction. The method should instead return an interval that does not
+intersect the initial interval. Due to formal certification considerations, it
+should however be in the rounded outward version of the initial interval. For
+example, if the expression is an integer between 1.3 and 1.7, then the method
+should return an interval contained in [1,1.3[ or ]1.7,2]. For practical
+reasons, [1,1] and [2,2] are the most interesting answers.</para>
+</section>
+
+<section>
+<title>Function generators</title>
+
+<para>Because functions can be templated by parameters. They have to be
+generated by the parser on the fly. This is done by invoking the functional
+method of an object derived from the <code>function_generator</code>
+class. For identical parameters, the same <code>function_class</code>
+object should be returned, which means that they have to be
+cached.</para>
+
+<programlisting language="cpp"><![CDATA[struct function_generator {
+  function_generator(const char *);
+  virtual function_class const *operator()(function_params const &) const = 0;
+  virtual ~function_generator() {}
+};]]></programlisting>
+
+<para>The constructor of this class requires the name of the function template,
+so that it gets registered by the parser. <code>operator()</code> is called
+with a vector of encoded parameters.</para>
+
+<para>If a function has no template parameters, the <code>default_function_generator</code>
+class can be used instead to register it. The first parameter of the constructor
+is the function name. The second one is the address of the
+<code>function_class</code> object.</para>
+
+<programlisting language="cpp"><![CDATA[default_function_generator::default_function_generator(const char *, function_class const *);]]></programlisting>
+</section>
+
+</section>

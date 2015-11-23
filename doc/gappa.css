@@ -1,0 +1,49 @@
+pre.programlisting {
+  background-color: #FF9 ;
+  border: 1px solid #060 ;
+  margin: 0 3em ;
+  padding: 0.5em 0.5em ;
+}
+
+pre.screen {
+  background-color: #CCC ;
+  border: 1px dashed #000 ;
+  margin: 0 3em ;
+  padding: 0.5em 0.5em ;
+}
+
+div.variablelist dl {
+  border: 1px dashed #000 ;
+  margin: 1.5em 3em ;
+  padding: 0.5em 0.5em ;
+}
+
+div.informalequation div {
+  text-align: center ;
+}
+
+div.informalequation + div.informalequation {
+  margin-top: 1em ;
+}
+
+div.navheader, div.navfooter {
+  background-color: #CEF ;
+  border: 1px solid #000 ;
+}
+
+div.navfooter {
+  margin-top: 1em ;
+}
+
+div.navfooter td {
+  vertical-align: middle;
+  padding-bottom: 11px ;
+}
+
+div.navheader img, div.navfooter img {
+  border-style: none ;
+}
+
+div.navfooter img {
+  margin-bottom: -11px ;
+}

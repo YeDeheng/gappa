@@ -1,0 +1,384 @@
+/*
+   Copyright (C) 2004 - 2010 by Guillaume Melquiond <guillaume.melquiond@inria.fr>
+   Part of the Gappa tool http://gappa.gforge.inria.fr/
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the CeCILL Free Software License Agreement or
+   under the terms of the GNU General Public License version.
+
+   See the COPYING and COPYING.GPL files for more details.
+*/
+
+%{
+#include <cstdlib>
+#include <iostream>
+
+#include "parser/ast.hpp"
+#include "proofs/dichotomy.hpp"
+#include "parser/parser.hpp"
+
+#define yyerror(msg) my_yyerror(yylloc, msg)
+
+int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc_param);
+
+#define error(msg) \
+  std::cerr << "Error: " << msg << " at line " << yylloc.first_line << " column " << yylloc.first_column << '\n'
+#define warning(msg) \
+  std::cerr << "Warning: " << msg << " at line " << yylloc.first_line << " column " << yylloc.first_column << '\n'
+
+int my_yyerror(YYLTYPE &yylloc, char const *errstr) {
+    error(errstr);
+    return EXIT_FAILURE;
+}
+
+#define failure(msg) do {\
+  error(msg); \
+  YYERROR; \
+} while (0)
+
+extern void register_user_rewrite(ast_real const *, ast_real const *, hint_cond_vect *);
+extern void generate_graph(ast_prop const *p);
+extern void parse_property_tree(property_tree &tree, ast_prop const *p);
+extern void test_ringularity(ast_real const *, ast_real const *, bool);
+extern int test_rewriting(ast_real const *, ast_real const *, std::string &);
+extern void check_approx(ast_real const *);
+extern std::set< ast_real const * > free_variables;
+extern bool parameter_rfma;
+
+static ast_number const *negative_number(ast_number const *nn) {
+  if (nn->base == 0) return nn;
+  ast_number n = *nn;
+  char &c = n.mantissa[0];
+  assert(c == '+');
+  c = '-';
+  return normalize(n);
+}
+
+static function_class const *rounding_mode = NULL;
+
+static ast_real const *rnd_normalize(ast_real const &real) {
+  ast_real const *r = normalize(real);
+  if (!rounding_mode) return r;
+  return normalize(ast_real(real_op(rounding_mode, r)));
+}
+
+static unsigned long read_integer_param(ast_number const *n)
+{
+  return (unsigned long)(atoi(n->mantissa.c_str()) * 2) | 1;
+}
+
+#define YYINCLUDED_STDLIB_H
+
+%}
+
+%error-verbose
+%pure-parser
+%locations
+
+%token IDENT FUNID VARID IN NUMBER SQRT LOG EXP LOG2 EXP2 FMA NE LE GE RDIV FIX FLT
+
+%union {
+  ast_number const	*number;
+  ast_ident		*ident;
+  ast_real const	*real;
+  ast_real_vect		*reals;
+  dichotomy_var		dvar;
+  dvar_vect		*dvars;
+  ast_prop		*prop;
+  function_class const	*function;
+  function_params	*params;
+  unsigned long		param;
+  hint_cond		*precond;
+  hint_cond_vect	*preconds;
+}
+
+%type <number>		NUMBER
+%type <number>		SNUMBER
+%type <number>		INTEGER
+%type <number>		SINTEGER
+%type <ident>		IDENT
+%type <ident>		VARID
+%type <ident>		FUNID
+%type <real>		REAL
+%type <reals>		REALS
+%type <dvar>		DVAR
+%type <dvars>		DVARS
+%type <param>		DPOINTS
+%type <prop>		PROP
+%type <function>	FUNCTION
+%type <params>		FUNCTION_PARAMS
+%type <params>		FUNCTION_PARAMS_AUX
+%type <param>		FUNCTION_PARAM
+%type <precond>		PRECOND
+%type <preconds>	PRECONDS
+%type <preconds>	PRECONDS_AUX
+
+%right IMPL
+%left OR
+%left AND
+%left NOT
+%left '+' '-'
+%left '*' '/'
+%left NEG
+
+%%
+
+BLOB: BLOB1 HINTS
+BLOB1: PROG '{' PROP '}'	{ generate_graph($3); }
+
+PROP:
+  REAL LE SNUMBER
+  {
+    real_op const *p = boost::get< real_op const >($1);
+    $$ = new ast_prop(ast_atom_bnd($1, (!p || p->type != UOP_ABS) ? NULL : token_zero, $3));
+  }
+| FIX '(' REAL ',' SINTEGER ')'
+			{ $$ = new ast_prop(ast_atom_fix($3, atoi($5->mantissa.c_str()))); }
+| FLT '(' REAL ',' INTEGER ')'
+			{ $$ = new ast_prop(ast_atom_flt($3, atoi($5->mantissa.c_str()))); }
+| REAL IN '[' SNUMBER ',' SNUMBER ']'
+			{ $$ = new ast_prop(ast_atom_bnd($1, $4, $6)); }
+| REAL IN '?'		{ $$ = new ast_prop(ast_atom_bnd($1, NULL, NULL)); }
+| REAL GE SNUMBER	{ $$ = new ast_prop(ast_atom_bnd($1, $3, NULL)); }
+| REAL RDIV REAL IN '[' SNUMBER ',' SNUMBER ']'
+			{ $$ = new ast_prop(ast_atom_rel($1, $3, $6, $8)); }
+| '|' REAL RDIV REAL '|' LE NUMBER
+			{ $$ = new ast_prop(ast_atom_rel($2, $4, negative_number($7), $7)); }
+| REAL RDIV REAL IN '?'	{ $$ = new ast_prop(ast_atom_rel($1, $3, NULL, NULL)); }
+| REAL '=' REAL		{ $$ = new ast_prop(ast_atom_eql($1, $3)); }
+| REAL NE REAL
+  {
+    ast_number const *const *r = boost::get<ast_number const *const>($3);
+    if (r && *r == token_zero) $$ = new ast_prop(ast_atom_nzr($1));
+    else $$ = new ast_prop(new ast_prop(ast_atom_eql($1, $3)));
+  }
+| PROP AND PROP		{ $$ = new ast_prop($1, PROP_AND,  $3); }
+| PROP OR PROP		{ $$ = new ast_prop($1, PROP_OR,   $3); }
+| PROP IMPL PROP	{ $$ = new ast_prop($1, PROP_IMPL, $3); }
+| NOT PROP		{ $$ = new ast_prop($2); }
+| '(' PROP ')'		{ $$ = $2; }
+
+SNUMBER:
+  NUMBER	{ $$ = $1; }
+| '+' NUMBER	{ $$ = $2; }
+| '-' NUMBER	{ $$ = negative_number($2); }
+
+INTEGER:
+  NUMBER
+  {
+    if ($1->exponent != 0 || $1->mantissa.size() >= 7) failure("integer expected");
+    $$ = $1;
+  }
+
+SINTEGER:
+  SNUMBER
+  {
+    if ($1->exponent != 0 || $1->mantissa.size() >= 7) failure("integer expected");
+    $$ = $1;
+  }
+
+FUNCTION_PARAM:
+  SINTEGER	{ $$ = read_integer_param($1); }
+| IDENT		{ $$ = reinterpret_cast< unsigned long >($1); }
+
+FUNCTION_PARAMS_AUX:
+  FUNCTION_PARAM	{ $$ = new function_params(1, $1); }
+| FUNCTION_PARAMS_AUX ',' FUNCTION_PARAM
+  {
+    function_params *p = $1;
+    p->push_back($3);
+    $$ = p;
+  }
+
+FUNCTION_PARAMS:
+				{ $$ = NULL; }
+| '<' FUNCTION_PARAMS_AUX '>'	{ $$ = $2; }
+
+FUNCTION:
+  FUNID FUNCTION_PARAMS
+  {
+    ast_ident *r = $1;
+    function_class const *f;
+    if (function_params *p = $2) {
+      f = (*r->fun)(*p);
+      delete p;
+    } else f = (*r->fun)(function_params());
+    if (!f) failure("invalid parameters for '" << r->name << "'");
+    $$ = f;
+  }
+
+EQUAL:
+  '='
+| FUNCTION '='
+  {
+    function_class const *f = $1;
+    if (f->type != UOP_ID) failure("rounding operator expected, got '" << f->pretty_name() << "'");
+    rounding_mode = f;
+  }
+
+PROG:
+| PROG IDENT EQUAL REAL ';'
+  {
+    ast_ident *v = $2;
+    ast_real const *r = $4;
+    if (v->type != ID_NONE) failure("redefinition of identifier '" << $2->name << "'");
+    v->type = ID_VAR;
+    v->var = r;
+/*    if (r->name) warning("renaming identifier '" << r->name->name << "' as '" << v->name << "'"); */
+    r->name = v;
+    rounding_mode = NULL;
+  }
+| PROG '@' IDENT '=' FUNCTION ';'
+  {
+    ast_ident *v = $3;
+    v->type = ID_FUN;
+    v->fun = new default_function_generator($5);
+  }
+| PROG VARID		{ failure("redefinition of identifier '" << $2->name << "'"); }
+| PROG FUNID		{ failure("redefinition of identifier '" << $2->name << "'"); }
+| PROG '@' VARID	{ failure("redefinition of identifier '" << $3->name << "'"); }
+| PROG '@' FUNID	{ failure("redefinition of identifier '" << $3->name << "'"); }
+
+REAL:
+  SNUMBER	{ $$ = normalize(ast_real($1)); }
+| VARID		{ $$ = $1->var; }
+| IDENT
+  {
+    ast_ident *v = $1;
+    v->type = ID_VAR;
+    ast_real *r = normalize(ast_real(v));
+    free_variables.insert(r);
+    v->var = r;
+    $$ = r;
+  }
+| FUNCTION '(' REALS ')'
+  {
+    function_class const *f = $1;
+    ast_real_vect *ops = $3;
+    if ((f->type == UOP_ID && ops->size() != 1) ||
+        (f->type != UOP_ID && f->type != COP_FMA && ops->size() != 2) ||
+        (f->type == COP_FMA && ops->size() != 3))
+      failure("incorrect number of arguments for '" << f->pretty_name() << "'");
+    $$ = normalize(ast_real(real_op(f, *ops)));
+    delete ops;
+  }
+| REAL '+' REAL		{ $$ = rnd_normalize(ast_real(real_op($1, BOP_ADD, $3))); }
+| REAL '-' REAL		{ $$ = rnd_normalize(ast_real(real_op($1, BOP_SUB, $3))); }
+| REAL '*' REAL		{ $$ = rnd_normalize(ast_real(real_op($1, BOP_MUL, $3))); }
+| REAL '/' REAL		{ $$ = rnd_normalize(ast_real(real_op($1, BOP_DIV, $3))); }
+| '|' REAL '|'		{ $$ = normalize(ast_real(real_op(UOP_ABS, $2))); }
+| SQRT '(' REAL ')'	{ $$ = rnd_normalize(ast_real(real_op(UOP_SQRT, $3))); }
+| LOG '(' REAL ')'	{ $$ = rnd_normalize(ast_real(real_op(UOP_LOG, $3))); }
+| EXP '(' REAL ')'	{ $$ = rnd_normalize(ast_real(real_op(UOP_EXP, $3))); }
+| LOG2 '(' REAL ')'	{ $$ = rnd_normalize(ast_real(real_op(UOP_LOG2, $3))); }
+| EXP2 '(' REAL ')'	{ $$ = rnd_normalize(ast_real(real_op(UOP_EXP2, $3))); }
+| FMA '(' REAL ',' REAL ',' REAL ')'
+  {
+    if (!parameter_rfma)
+      $$ = rnd_normalize(ast_real(real_op(normalize(ast_real(real_op($3, BOP_MUL, $5))), BOP_ADD, $7)));
+    else
+      $$ = rnd_normalize(ast_real(real_op($7, BOP_ADD, normalize(ast_real(real_op($3, BOP_MUL, $5))))));
+  }
+| '(' REAL ')'		{ $$ = $2; }
+| '+' REAL %prec NEG	{ $$ = $2; }
+| '-' REAL %prec NEG	{ $$ = normalize(ast_real(real_op(UOP_NEG, $2))); }
+
+REALS:
+  REAL		{ $$ = new ast_real_vect(1, $1); }
+| REALS ',' REAL
+  {
+    $1->push_back($3);
+    $$ = $1;
+  }
+
+DPOINTS:
+  SNUMBER		{ $$ = fill_splitter(0, $1); }
+| DPOINTS ',' SNUMBER	{ $$ = fill_splitter($1, $3); }
+
+DVAR:
+  REAL				{ dichotomy_var v = { $1, 0 }; $$ = v; }
+| REAL IN INTEGER		{ dichotomy_var v = { $1, read_integer_param($3) }; $$ = v; }
+| REAL IN '(' DPOINTS ')'	{ dichotomy_var v = { $1, $4 }; $$ = v; }
+
+DVARS:
+  DVAR		{ $$ = new dvar_vect(1, $1); }
+| DVARS ',' DVAR
+  {
+    $1->push_back($3);
+    $$ = $1;
+  }
+
+PRECOND:
+  REAL NE  SINTEGER	{ $$ = new hint_cond(COND_NE, $1, $3); }
+| REAL LE  SINTEGER	{ $$ = new hint_cond(COND_LE, $1, $3); }
+| REAL GE  SINTEGER	{ $$ = new hint_cond(COND_GE, $1, $3); }
+| REAL '<' SINTEGER	{ $$ = new hint_cond(COND_LT, $1, $3); }
+| REAL '>' SINTEGER	{ $$ = new hint_cond(COND_GT, $1, $3); }
+
+PRECONDS_AUX:
+  PRECOND { $$ = new hint_cond_vect(1, $1); }
+| PRECONDS_AUX ',' PRECOND
+  {
+    $1->push_back($3);
+    $$ = $1;
+  }
+
+PRECONDS:
+			{ $$ = NULL; }
+| '{' PRECONDS_AUX '}'	{ $$ = $2; }
+
+HINTS:
+| HINTS REAL IMPL REAL PRECONDS ';'
+  {
+    ast_real const *r1 = $2, *r2 = $4;
+    hint_cond_vect *hc = $5;
+    test_ringularity(r1, r2, !hc);
+    std::string info;
+    int t = test_rewriting(r1, r2, info);
+    if (t == 1) {
+      warning("no need for the rewriting");
+      std::cerr << "  if one of the following relations is present\n" << info;
+    } else if (t == 2) {
+      warning("no need for the rewriting");
+      if (!info.empty())
+        std::cerr << "  if all the following properties can be proved\n" << info;
+    }
+    check_approx(r1);
+    register_user_rewrite(r1, r2, hc);
+    register_approx(r1, r2);
+    delete hc;
+  }
+| HINTS REALS '$' DVARS ';'
+  {
+    dichotomy_hint h;
+    h.src = *$4; delete $4;
+    ast_prop *p = NULL;
+    for (ast_real_vect::const_iterator i = $2->begin(), i_end = $2->end();
+         i != i_end; ++i)
+    {
+      ast_prop *q = new ast_prop(ast_atom_bnd(*i, NULL, NULL));
+      if (!p) p = q;
+      else p = new ast_prop(p, PROP_AND, q);
+    }
+    delete $2;
+    parse_property_tree(h.dst, p);
+    dichotomies.push_back(h);
+  }
+| HINTS PROP '$' DVARS ';'
+  {
+    dichotomy_hint h;
+    h.src = *$4; delete $4;
+    parse_property_tree(h.dst, $2);
+    dichotomies.push_back(h);
+  }
+| HINTS '$' DVARS ';'
+  {
+    dichotomy_hint h;
+    h.src = *$3; delete $3;
+    dichotomies.push_back(h);
+  }
+| HINTS REAL '~' REAL ';'
+  {
+    if (!register_approx($2, $4))
+      warning("relation already known");
+  }

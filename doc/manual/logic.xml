@@ -1,0 +1,51 @@
+<section>
+<title>Logical formulas</title>
+
+<para>These sections describe some properties of the logical
+fragment Gappa manipulates. Notice that this fragment is sound, as the
+generated formal proofs depend on the support libraries, and these
+libraries are formally proved by relying only on the axioms of basic
+arithmetic on real numbers.</para>
+
+<section>
+<title>Undecidability</title>
+
+<para>First, notice that the equality of two expressions is equivalent
+to checking that their difference is bounded by zero: <code>e - f in
+[0,0]</code>. Second, the property that a real number is a natural
+number can be expressed by the equality between its integer part
+<code>int&lt;dn&gt;(e)</code> and its absolute value
+<code>|e|</code>.</para>
+
+<para>Thanks to classical logic, a first-order formula can be written
+in prenex normal form. Moreover, by skolemizing the formula, existential
+quantifiers can be removed (although Gappa does not allow the user to
+type arbitrary functional operators in order to prevent mistyping
+existing operators, the engine can handle them).</para>
+
+<para>As a consequence, a first-order formula with Peano arithmetic
+(addition, multiplication, and equality, on natural numbers) can be
+expressed in Gappa's formalism. It implies that Gappa's logical fragment
+is not decidable.</para>
+</section>
+
+<section>
+<title>Expressiveness</title>
+
+<para>Equality between two expressions can be expressed as a bound on
+their difference: <code>e - f in [0,0]</code>. For inequalities, the
+difference can be compared to zero: <code>e - f &gt;= 0</code>. The
+negation of the previous propositions can also be used. Checking the
+sign of an expression could also be done with bounds; here are two
+examples: <code>e - |e| in [0,0]</code> and <code>e in [0,1] \/
+1 / e in [0,1]</code>. Logical negations of these formulas can be used
+to obtain strict inequalities. They can also be defined by discarding
+only the zero case: <code>not e in [0,0]</code>.</para>
+
+<para>Disclaimer: although these properties can be expressed, it does
+not mean that Gappa is able to handle them efficiently. Yet, if a
+proposition is proved to be true by Gappa, then it can be considered to
+be true even if the previous "features" were used in its expression.</para>
+</section>
+
+</section>

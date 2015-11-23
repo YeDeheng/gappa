@@ -1,0 +1,322 @@
+<bibliography>
+
+<title>Description of Gappa</title>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Marc</firstname><surname>Daumas</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Melquiond</surname></author>
+    </authorgroup>
+    <title>Certification of bounds on expressions involving rounded operators</title>
+    <pagenums>1-20</pagenums>
+    <biblioid class="doi">10.1145/1644001.1644003</biblioid>
+  </biblioset>
+  <biblioset relation='journal'>
+    <title>ACM Transactions on Mathematical Software</title>
+    <volumenum>37</volumenum>
+    <issuenum>1</issuenum>
+    <pubdate>2010</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <authorgroup>
+    <author><firstname>Jean-Michel</firstname><surname>Muller</surname></author>
+    <author><firstname>Nicolas</firstname><surname>Brisebarre</surname></author>
+    <author><firstname>Florent</firstname><surname>de Dinechin</surname></author>
+    <author><firstname>Claude-Pierre</firstname><surname>Jeannerod</surname></author>
+    <author><firstname>Vincent</firstname><surname>Lefèvre</surname></author>
+    <author><firstname>Guillaume</firstname><surname>Melquiond</surname></author>
+    <author><firstname>Nathalie</firstname><surname>Revol</surname></author>
+    <author><firstname>Damien</firstname><surname>Stehlé</surname></author>
+    <author><firstname>Serge</firstname><surname>Torres</surname></author>
+  </authorgroup>
+  <title>Handbook of Floating-Point Arithmetic</title>
+  <publisher><publishername>Birkhäuser</publishername></publisher>
+  <pubdate>2010</pubdate>
+  <biblioid class="doi">10.1007/978-0-8176-4705-6_15</biblioid>
+</biblioentry>
+
+</bibliography>
+
+<bibliography>
+
+<title>Applications of Gappa</title>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Guillaume</firstname><surname>Melquiond</surname></author>
+      <author><firstname>Sylvain</firstname><surname>Pion</surname></author>
+    </authorgroup>
+    <title>Formally certified floating-point filters for homogeneous geometric predicates</title>
+    <pagenums>57­-70</pagenums>
+    <biblioid class="doi">10.1051/ita:2007005</biblioid>
+  </biblioset>
+  <biblioset relation='journal'>
+    <title>Theoretical Informatics and Applications</title>
+    <volumenum>41</volumenum>
+    <issuenum>1</issuenum>
+    <pubdate>2007</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Arnaud</firstname><surname>Tisserand</surname></author>
+    </authorgroup>
+    <title>High-performance hardware operators for polynomial evaluation</title>
+    <pagenums>14-23</pagenums>
+    <biblioid class="doi">10.1504/IJHPSA.2007.013288</biblioid>
+  </biblioset>
+  <biblioset relation='journal'>
+    <title>International Journal of High Performance Systems Architecture</title>
+    <volumenum>1</volumenum>
+    <issuenum>1</issuenum>
+    <pubdate>2007</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Christoph</firstname><surname>Lauter</surname></author>
+      <author><firstname>Florent</firstname><surname>de Dinechin</surname></author>
+    </authorgroup>
+    <title>Optimizing polynomials for floating-point implementation</title>
+    <pagenums>7-16</pagenums>
+    <biblioid class="uri">http://hal.archives-ouvertes.fr/ensl-00260563/</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 8th Conference on Real Numbers and Computers</title>
+    <address>Santiago de Compostella</address>
+    <pubdate>2008</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Sylvie</firstname><surname>Boldo</surname></author>
+      <author><firstname>Marc</firstname><surname>Daumas</surname></author>
+      <author><firstname>Pascal</firstname><surname>Giorgi</surname></author>
+    </authorgroup>
+    <title>Formal proof for delayed finite field arithmetic using floating point operators</title>
+    <pagenums>113-122</pagenums>
+    <biblioid class="uri">http://hal.archives-ouvertes.fr/hal-00135090/</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 8th Conference on Real Numbers and Computers</title>
+    <address>Santiago de Compostella</address>
+    <pubdate>2008</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Sylvie</firstname><surname>Boldo</surname></author>
+      <author><firstname>Jean-Christophe</firstname><surname>Filliâtre</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Melquiond</surname></author>
+    </authorgroup>
+    <title>Combining Coq and Gappa for certifying floating-point programs</title>
+    <pagenums>59-74</pagenums>
+    <biblioid class="doi">10.1007/978-3-642-02614-0_10</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 16th Calculemus Symposium</title>
+    <address>Grand Bend, ON, Canada</address>
+    <pubdate>2009</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Claude-Pierre</firstname><surname>Jeannerod</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Revy</surname></author>
+    </authorgroup>
+    <title>Optimizing correctly-rounded reciprocal square roots for embedded VLIW cores</title>
+    <pagenums>731-735</pagenums>
+    <biblioid class="doi">10.1109/ACSSC.2009.5469948</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 43rd Asilomar Conference on Signals, Systems and Computers</title>
+    <address>Pacific Grove, CA, USA</address>
+    <pubdate>2009</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Claude-Pierre</firstname><surname>Jeannerod</surname></author>
+      <author><firstname>Hervé</firstname><surname>Knochel</surname></author>
+      <author><firstname>Christophe</firstname><surname>Monat</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Revy</surname></author>
+      <author><firstname>Gilles</firstname><surname>Villard</surname></author>
+    </authorgroup>
+    <title>A new binary floating-point division algorithm and its software implementation on the ST231 processor</title>
+    <pagenums>95-103</pagenums>
+    <biblioid class="doi">10.1109/ARITH.2009.19</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 19th Symposium on Computer Arithmetic</title>
+    <address>Portland, OR, USA</address>
+    <pubdate>2009</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Michael D.</firstname><surname>Linderman</surname></author>
+      <author><firstname>Matthew</firstname><surname>Ho</surname></author>
+      <author><firstname>David L.</firstname><surname>Dill</surname></author>
+      <author><firstname>Teresa H.</firstname><surname>Meng</surname></author>
+      <author><firstname>Garry P.</firstname><surname>Nolan</surname></author>
+    </authorgroup>
+    <title>Towards program optimization through automated analysis of numerical precision</title>
+    <pagenums>230-237</pagenums>
+    <biblioid class="doi">10.1145/1772954.1772987</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 8th International Symposium on Code Generation and Optimization</title>
+    <address>Toronto, ON, Canada</address>
+    <pubdate>2010</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Vincent</firstname><surname>Lefèvre</surname></author>
+      <author><firstname>Philippe</firstname><surname>Théveny</surname></author>
+      <author><firstname>Florent</firstname><surname>de Dinechin</surname></author>
+      <author><firstname>Claude-Pierre</firstname><surname>Jeannerod</surname></author>
+      <author><firstname>Christophe</firstname><surname>Mouilleron</surname></author>
+      <author><firstname>David</firstname><surname>Pfannholzer</surname></author>
+      <author><firstname>Nathalie</firstname><surname>Revol</surname></author>
+    </authorgroup>
+    <title>LEMA: towards a language for reliable arithmetic</title>
+    <pagenums>41-52</pagenums>
+    <biblioid class="doi">10.1145/1838599.1838622</biblioid>
+  </biblioset>
+  <biblioset relation='journal'>
+    <title>ACM SIGSAM Bulletin</title>
+    <volumenum>44</volumenum>
+    <issuenum>1/2</issuenum>
+    <pubdate>2010</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Sylvie</firstname><surname>Boldo</surname></author>
+      <author><firstname>Thi Minh Tuyen</firstname><surname>Nguyen</surname></author>
+    </authorgroup>
+    <title>Hardware-independent proofs of numerical programs</title>
+    <pagenums>14-23</pagenums>
+    <biblioid class="uri">http://shemesh.larc.nasa.gov/NFM2010/papers/nfm2010_14_23.pdf</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 2nd NASA Formal Methods Symposium</title>
+    <address>Washington DC, USA</address>
+    <pubdate>2010</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Ali</firstname><surname>Ayad</surname></author>
+      <author><firstname>Claude</firstname><surname>Marché</surname></author>
+    </authorgroup>
+    <title>Multi-prover verification of floating-point programs</title>
+    <pagenums>127-141</pagenums>
+    <biblioid class="doi">10.1007/978-3-642-14203-1_11</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 5th International Joint Conference on Automated Reasoning</title>
+    <address>Edinburgh, Scotland</address>
+    <pubdate>2010</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Claude-Pierre</firstname><surname>Jeannerod</surname></author>
+      <author><firstname>Hervé</firstname><surname>Knochel</surname></author>
+      <author><firstname>Christophe</firstname><surname>Monat</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Revy</surname></author>
+    </authorgroup>
+    <title>Computing floating-point square roots via bivariate polynomial evaluation</title>
+    <pagenums>214-227</pagenums>
+    <biblioid class="doi">10.1109/TC.2010.152</biblioid>
+  </biblioset>
+  <biblioset relation='journal'>
+    <title>IEEE Transactions on Computers</title>
+    <volumenum>60</volumenum>
+    <issuenum>2</issuenum>
+    <pubdate>2011</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Florent</firstname><surname>de Dinechin</surname></author>
+      <author><firstname>Christoph</firstname><surname>Lauter</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Melquiond</surname></author>
+    </authorgroup>
+    <title>Certifying the floating-point implementation of an elementary function using Gappa</title>
+    <pagenums>242-253</pagenums>
+    <biblioid class="doi">10.1109/TC.2010.128</biblioid>
+  </biblioset>
+  <biblioset relation='journal'>
+    <title>IEEE Transactions on Computers</title>
+    <volumenum>60</volumenum>
+    <issuenum>2</issuenum>
+    <pubdate>2011</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Christophe</firstname><surname>Mouilleron</surname></author>
+      <author><firstname>Guillaume</firstname><surname>Revy</surname></author>
+    </authorgroup>
+    <title>Automatic generation of fast and certified code for polynomial evaluation</title>
+    <pagenums>233-242</pagenums>
+    <biblioid class="doi">10.1109/ARITH.2011.39</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 20th Symposium on Computer Arithmetic</title>
+    <address>Tübingen, Germany</address>
+    <pubdate>2011</pubdate>
+  </biblioset>
+</biblioentry>
+
+<biblioentry>
+  <biblioset relation='article'>
+    <authorgroup>
+      <author><firstname>Claude-Pierre</firstname><surname>Jeannerod</surname></author>
+      <author><firstname>Jingyan</firstname><surname>Jourdan-Lu</surname></author>
+    </authorgroup>
+    <title>Simultaneous floating-point sine and cosine for VLIW integer processors</title>
+    <pagenums>69-76</pagenums>
+    <biblioid class="doi">10.1109/ASAP.2012.12</biblioid>
+  </biblioset>
+  <biblioset relation='proceedings'>
+    <title>Proceedings of the 23rd International Conference on Application-Specific Systems, Architectures and Processors</title>
+    <address>Delft, The Netherlands</address>
+    <pubdate>2012</pubdate>
+  </biblioset>
+</biblioentry>
+
+</bibliography>

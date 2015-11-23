@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+  "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
+[
+  <!ENTITY gappa-biblio      SYSTEM "manual/biblio.xml">
+  <!ENTITY gappa-coq         SYSTEM "manual/coq.xml">
+  <!ENTITY gappa-customizing SYSTEM "manual/customizing.xml">
+  <!ENTITY gappa-expressions SYSTEM "manual/expressions.xml">
+  <!ENTITY gappa-grammar     SYSTEM "manual/grammar.xml">
+  <!ENTITY gappa-hints       SYSTEM "manual/hints.xml">
+  <!ENTITY gappa-invoking    SYSTEM "manual/invoking.xml">
+  <!ENTITY gappa-logic       SYSTEM "manual/logic.xml">
+  <!ENTITY gappa-roundings   SYSTEM "manual/roundings.xml">
+  <!ENTITY gappa-theorems    SYSTEM "manual/theorems.xml">
+  <!ENTITY gappa-warnings    SYSTEM "manual/warnings.xml">
+  <!ENTITY gappa-why         SYSTEM "manual/why.xml">
+  <!ENTITY gappa-newton      SYSTEM "examples/newton.xml">
+  <!ENTITY gappa-tang        SYSTEM "examples/tang.xml">
+  <!ENTITY gappa-x1mx        SYSTEM "examples/x1mx.xml">
+  <!ENTITY gappa-news        SYSTEM "gappa-news.xml">
+]>
+<book>
+
+<title>User's Guide for Gappa</title>
+<bookinfo>
+<author><firstname>Guillaume</firstname><surname>Melquiond</surname></author>
+</bookinfo>
+
+<chapter>
+<title>Introduction</title>
+
+<para>Gappa (<foreignphrase>Génération Automatique de Preuves de
+Propriétés Arithmétiques</foreignphrase> — automatic proof generation of
+arithmetic properties) is a tool intended to help verifying and formally
+proving properties on numerical programs and circuits handling
+floating-point or fixed-point arithmetic.</para>
+
+<para>This tool manipulates logical formulas stating the enclosures of
+expressions in some intervals. For example, a formal proof of the property
+<texinformal>c \in [-0.3,-0.1]\ \land\ (2a \in [3,4] \Rightarrow b+c \in [1,2])
+\ \land\ a-c \in [1.9,2.05] \quad \Rightarrow \quad b+1 \in [2,3.5]</texinformal>
+can be generated thanks to the following Gappa script.</para>
+
+<programlisting language="gappa"><![CDATA[{
+  c in [-0.3,-0.1] /\
+  (2 * a in [3,4] -> b + c in [1,2]) /\
+  a - c in [1.9,2.05]
+
+  -> b + 1 in [2,3.5]
+}
+
+a -> a - c + c;
+b -> b + c - c;]]>
+</programlisting>
+
+<para>Through the use of rounding operators as part of the expressions, Gappa
+is specially designed to deal with formulas that could appear when certifying
+numerical codes. In particular, Gappa makes it simple to bound computational
+errors due to floating-point arithmetic.</para>
+
+<para>Gappa is free software; you can redistribute it and/or modify it
+under the terms of the CeCILL Free Software License Agreement or under
+the terms of the GNU General Public License. (Refer to the files from the
+source archive for the precise wording of these two licences.) Gappa can
+be downloaded on its <ulink url="http://gappa.gforge.inria.fr/">project
+page</ulink>. The tool and its documentation have been written by <ulink
+url="http://www.lri.fr/~melquion/">Guillaume Melquiond</ulink>.</para>
+
+</chapter>
+
+<chapter>
+<title>Invoking Gappa</title>
+&gappa-invoking;
+</chapter>
+
+<chapter>
+<title>Formalizing a problem</title>
+&gappa-expressions;
+&gappa-hints;
+</chapter>
+
+<chapter>
+<title>Supported arithmetic</title>
+&gappa-roundings;
+</chapter>
+
+<chapter>
+<title>Examples</title>
+&gappa-x1mx;
+&gappa-tang;
+&gappa-newton;
+</chapter>
+
+<chapter>
+<title>Using Gappa from other tools</title>
+&gappa-why;
+&gappa-coq;
+</chapter>
+
+<chapter>
+<title>Customizing Gappa</title>
+&gappa-customizing;
+</chapter>
+
+<chapter>
+<title>Bibliography</title>
+&gappa-biblio;
+</chapter>
+
+<appendix>
+<title>Gappa language</title>
+&gappa-grammar;
+&gappa-logic;
+</appendix>
+
+<appendix>
+<title>Warning and error messages</title>
+&gappa-warnings;
+</appendix>
+
+<appendix>
+<title>Theorems of Gappa</title>
+&gappa-theorems;
+</appendix>
+
+<appendix>
+<title>Changes</title>
+&gappa-news;
+</appendix>
+
+</book>

@@ -1,0 +1,215 @@
+<section>
+<title>Input and output</title>
+
+<para>Gappa reads the script whose filename is passed as an argument to
+the tool, or on its standard input if none. Such a script is made of
+three parts: the definitions, the logical formula, and the hints. Warning
+messages, error messages, and results, are displayed on the standard
+error output. Gappa also sends to the standard output a formal proof of
+the logical formula; its format depends on the selected back-end.
+Finally, if the tool was unable to prove some goals, its return code is a
+nonzero value.</para>
+
+<para>For example, the following command lines create a simple script in
+file <filename>test.g</filename>, pass it to Gappa, and store the
+generated Coq proof in file <filename>test.v</filename> file. They also
+test the return code of Gappa and send the generated proof to Coq so that
+it is automatically checked. Since the proof checker does not display
+anything, it means no errors were detected and the result computed by
+Gappa is correct.</para>
+<screen><![CDATA[$ echo "{ x in [-2,2] -> x * x in ? }" > test.g
+
+$ gappa -Bcoq test.g > test.v
+Results:
+  x * x in [0, 4]
+
+$ echo "Return code is $?"
+Return code is 0
+
+$ coqc -I path/to/gappalib-coq test.v
+
+$]]></screen>
+
+<para>Note that, if no ranges are left unspecified in the logical formula,
+Gappa will not have anything to display in case of success.</para>
+<screen><![CDATA[$ echo "{ 1 + 1 = 2 }" | gappa
+
+$ echo "Return code is $?"
+Return code is 0]]></screen>
+
+</section>
+
+<!-- ###### -->
+
+<section>
+<title>Command-line options</title>
+
+<section>
+<title>Selecting a proof back-end</title>
+
+<para>These options are mutually exclusive and cannot be embedded into
+scripts.</para>
+
+<section>
+<title>Null back-end.</title>
+<para>Option: <code>-Bnull</code></para>
+<para>Do not enable any back-end. This is the default behavior. This is
+also the only back-end compatible with the <code>-Munconstrained</code>
+option.</para>
+</section>
+
+<section>
+<title>Coq back-end</title>
+<para>Option: <code>-Bcoq</code></para>
+<para>When this back-end is selected, Gappa generates a script that proves the
+logical formula. This script can be mechanically verified by the Coq
+proof checker. It can also be reused in bigger formal developments made with
+Coq.</para>
+</section>
+
+<section>
+<title>Latex back-end</title>
+<para>Option: <code>-Blatex</code></para>
+<para>When this back-end is selected, Gappa generates a Latex file that
+contains the steps for proving the logical formula.</para>
+</section>
+
+<!--
+<section>
+<title>HOL Light back-end</title>
+<para>Option: <code>-Bholl</code></para>
+<para>Similar to the previous option, but for the HOL Light proof checker.</para>
+</section>
+-->
+
+<section>
+<title>Coq lambda-term back-end</title>
+<para>Option: <code>-Bcoq-lambda</code></para>
+<para>This back-end is used by the <code>gappa</code> tactic available
+for the Coq proof checker. It generates a lambda-term that can be
+directly loaded by the proof checker, but it only supports the features
+needed by the tactic. For instance, it does not support rewriting rules.</para>
+</section>
+
+</section>
+
+<section>
+<title>Setting internal parameters</title>
+
+<section>
+<title>Internal precision</title>
+<para>Option: <code>-Eprecision=</code><emphasis>integer</emphasis></para>
+<para>This option sets the internal MPFR precision that Gappa uses when
+computing bounds of intervals. The default value is 60 and should be sufficient
+for most uses.</para>
+</section>
+
+<section>
+<title>Dichotomy depth</title>
+<para>Option: <code>-Edichotomy=</code><emphasis>integer</emphasis></para>
+<para>This option limits the depth of a dichotomy split. The default
+value is 100. It means that an interval of width 1 is potentially split
+into <texinline>2^{100}</texinline> intervals of width
+<texinline>2^{-100}</texinline> relatively to the original interval. This
+should be sufficient for most uses too.</para>
+</section>
+
+<section>
+<title>Fused multiply-add format</title>
+<para>Option: <code>-E[no-]reverted-fma</code></para>
+<para>By default (<code>-Eno-reverted-fma</code>), the expression
+<code>fma(a,b,c)</code> is interpreted as <code>a * b + c</code>. As this may
+not be the preferred order for the operands, the option makes Gappa use
+<code>c + a * b</code> instead.</para>
+</section>
+
+</section>
+
+<section>
+<title>Setting modes</title>
+
+<para>These options cannot be embedded into scripts.</para>
+
+<section>
+<title>Assuming vague hypotheses</title>
+<para>Option: <code>-Munconstrained</code></para>
+<para>By default, Gappa checks that all the hypotheses hold before applying a
+theorem. This mode weakens the engine by making it skip hypotheses that are not
+needed for computing intermediate results. For example, Gappa will no longer
+check that <code>x</code> is not zero before applying the lemma proving
+<code>x / x in [1,1]</code>.</para>
+<para>This mode is especially useful when starting a proof on relative errors,
+as it makes it possible to get some early results about them without having to
+prove that they are well-defined.</para>
+<para>At the end of its run, Gappa displays all the facts that are left
+unproven. In the following example, the property <code>NZR</code>
+indicates that Gappa possibly needs to prove that some values are not
+zero.</para>
+<programlisting language="gappa"><![CDATA[{ x in [1,2] ->
+  (x + 1) / (x + 1) in ? /\ (x - 1) / (x - 1) in ? }]]></programlisting>
+<screen>Results:
+  (x + 1) / (x + 1) in [1, 1]
+  (x - 1) / (x - 1) in [1, 1]
+Warning: some properties were assumed:
+  NZR(x + 1)
+  NZR(x - 1)</screen>
+<para>Notice that Gappa has assumed <code>x + 1</code> to be nonzero, while
+it actually can be deduced from <code>x in [1,2].</code> So there might be
+false positives among assumptions, depending on the order Gappa deduced
+properties.</para>
+<para>This mode cannot be used when a proof back-end is selected, as a
+generated proof would contain holes. It is, however, as slow as if a
+back-end had been selected, since the whole proof graph is kept around.</para>
+</section>
+
+<section>
+<title>Gathering statistics</title>
+<para>Option: <code>-Mstatistics</code></para>
+<para>At the end of its computations, Gappa displays some statistics. For
+example, the second script of <xref linkend="example-fixed"/>
+gives:</para>
+<screen>Statistics:
+  2359 expressions were considered,
+    but then 127 of those got discarded.
+  6317 theorems were considered,
+    but then 326 of those got discarded.
+  7437 applications were tried. Among those,
+    5933 were successful,
+    yet 2626 proved useless
+    and 13 improved existing results.</screen>
+<para>The first two lines show how many intermediate expressions Gappa
+has prepared. The first number tells how many have been considered, and
+the second number tells how many of them were discarded because no
+theorem could handle them. Similarly, the next two lines show how many
+theorem instances Gappa has prepared. The first number tells how many
+have been considered, and the second number tells how many of them were
+discarded because their hypotheses could never have been satisfied.</para>
+<para>Once both sets are ready, Gappa tries to deduce new properties by
+repeatedly applying the prepared theorems. The next statistic show how
+many of those theorems Gappa tried to apply. Applications are successful
+if Gappa could satisfy theorem hypotheses. Even if an application succeeded,
+the deduced property could have been (partly) useless because a stronger
+property had already been found at the time the theorem was applied. The
+last two lines track these cases.</para>
+</section>
+
+</section>
+
+<section>
+<title>Enabling and disabling warning messages</title>
+<para>By default, all the warning messages are enabled. See annex for details
+on warning messages displayed during <link linkend="warning-messages1">parsing</link>
+and during <link linkend="warning-messages2">computations</link>.</para>
+</section>
+
+</section>
+
+<!-- ###### -->
+
+<section>
+<title>Embedded options</title>
+<para>Options setting internal parameters or enabling warning messages can be
+embedded in a Gappa proof script. It is especially important when the logical
+property cannot be proved with the default parameters. These options are passed
+through a special comment syntax: <code>#@ -Edichotomy=200</code>.</para>
+</section>

@@ -1,0 +1,602 @@
+<section>
+<title>Predicates</title>
+
+<para>Gappa works on sets of facts about real-valued expressions. The
+following predicates are handled internally:</para>
+
+<variablelist>
+<varlistentry><term><code>BND(x,I)</code></term>
+  <listitem><para>The value of expression <code>x</code> is included in
+  interval <code>I</code>.</para></listitem></varlistentry>
+<varlistentry><term><code>ABS(x,I)</code></term>
+  <listitem><para>The absolute value of expression <code>x</code> is
+  included in interval <code>I</code>.</para></listitem></varlistentry>
+<varlistentry><term><code>REL(x,y,I)</code></term>
+  <listitem><para>The values of expressions <code>x</code> and <code>y</code>
+  satisfy <texinline>x = y \times (1 + \varepsilon)</texinline> with
+  <texinline>\varepsilon\in I</texinline>.</para></listitem></varlistentry>
+<varlistentry><term><code>FIX(x,k)</code></term>
+  <listitem><para>The value of expression <code>x</code> is such that
+  <texinline>\exists m \in \mathbb{Z},~x = m\cdot 2^k</texinline>.</para>
+  </listitem></varlistentry>
+<varlistentry><term><code>FLT(x,k)</code></term>
+  <listitem><para>The value of expression <code>x</code> is such that
+  <texinline>\exists m,e \in \mathbb{Z},~x = m\cdot 2^e \land |m| \lt 2^k</texinline>.</para>
+  </listitem></varlistentry>
+<varlistentry><term><code>NZR(x)</code></term>
+  <listitem><para>The value of expression <code>x</code> is not
+  zero.</para></listitem></varlistentry>
+<varlistentry><term><code>EQL(x,y)</code></term>
+  <listitem><para>Expressions <code>x</code> and <code>y</code> have
+  equal values.</para></listitem></varlistentry>
+</variablelist>
+
+<para>In the definitions above, <code>I</code> denotes an interval whose
+bounds have known numerical values, while <code>k</code> is a known
+integer. In the description of the theorems, these parameters will
+usually be ignored. For instance, <code>BND(x)</code> just means that an
+enclosure of <code>x</code> is known. Except for <code>NZR</code>, all
+these predicates can appear in the logical formula the user wants to
+check. In addition, <code>EQL</code> properties are also used to express
+rewriting hints provided by the user.</para>
+
+</section>
+
+<section>
+<title>Theorems</title>
+
+<para>There are three categories of theorems in Gappa: theorems about
+real arithmetic, theorems about rounding operators, and rewriting
+rules.</para>
+
+<para>In the following, variables <code>a</code>, <code>b</code>,
+<code>c</code>, and <code>d</code>, represent arbitrary expressions.
+Gappa is using backward reasoning, so they are filled by matching the
+goal of a theorem against the property Gappa wants to compute. If some
+theorem mentions both <code>a</code> and <code>b</code> but only one of
+them appears on the right-hand side, then Gappa infers the other one so
+that <code>b</code> is an approximate value of <code>a</code>. See <xref
+linkend="hint-approx"/> for more details. There may be additional
+constraints on the expressions that require some of them to be
+syntactically different (denoted <code>a &ne; b</code>), or to be
+syntactically constant (denoted <code>a=</code>), or to be syntactically
+variable (denoted <code>a~</code>).</para>
+
+<section>
+<title>Theorems about real arithmetic</title>
+
+<informaltable frame='all'>
+<tgroup cols='4'>
+<thead>
+<row><entry>Theorem name</entry><entry>Goal</entry><entry>Hypotheses</entry><entry>Constraints</entry></row>
+</thead>
+<tbody>
+<row><entry><code>sub_of_eql</code></entry>
+  <entry><code>BND(a - b)</code></entry>
+  <entry><code>EQL(a, b)</code></entry>
+  <entry><code>a &ne; b</code>, <code>(a - b)~</code></entry></row>
+<row><entry><code>eql_of_cst</code></entry>
+  <entry><code>EQL(a, b)</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code></entry>
+  <entry><code>a=</code>, <code>b=</code></entry></row>
+<row><entry><code>rel_refl</code></entry>
+  <entry><code>REL(a, a)</code></entry>
+  <entry></entry>
+  <entry></entry></row>
+<row><entry><code>eql_trans</code></entry>
+  <entry><code>EQL(b, c)</code></entry>
+  <entry><code>EQL(b, a)</code>, <code>EQL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>eql_trans</code></entry>
+  <entry><code>EQL(c, a)</code></entry>
+  <entry><code>EQL(c, b)</code>, <code>EQL(b, a)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>neg</code></entry>
+  <entry><code>BND(-a)</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>sqrt</code></entry>
+  <entry><code>BND(sqrt(a))</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>sub_refl</code></entry>
+  <entry><code>BND(a - a)</code></entry>
+  <entry></entry>
+  <entry></entry></row>
+<row><entry><code>div_refl</code></entry>
+  <entry><code>BND(a / a)</code></entry>
+  <entry><code>NZR(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>square</code></entry>
+  <entry><code>BND(a * a)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>neg_a</code></entry>
+  <entry><code>ABS(-a)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>abs_a</code></entry>
+  <entry><code>ABS(|a|)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>add</code></entry>
+  <entry><code>BND(a + b)</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>sub</code></entry>
+  <entry><code>BND(a - b)</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>mul_{nop}{nop}</code></entry>
+  <entry><code>BND(a * b)</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>div_{nop}{np}</code></entry>
+  <entry><code>BND(a / b)</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>add_aa_{nop}</code></entry>
+  <entry><code>ABS(a + b)</code></entry>
+  <entry><code>ABS(a)</code>, <code>ABS(b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>sub_aa_{nop}</code></entry>
+  <entry><code>ABS(a - b)</code></entry>
+  <entry><code>ABS(a)</code>, <code>ABS(b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>mul_aa</code></entry>
+  <entry><code>ABS(a * b)</code></entry>
+  <entry><code>ABS(a)</code>, <code>ABS(b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>div_aa</code></entry>
+  <entry><code>ABS(a / b)</code></entry>
+  <entry><code>ABS(a)</code>, <code>ABS(b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>bnd_of_abs</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry><code>a &ne; |?|</code></entry></row>
+<row><entry><code>abs_of_bnd_{nop}</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry><code>a &ne; |?|</code></entry></row>
+<row><entry><code>bnd_of_bnd_abs_{np}</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry><code>BND(a)</code>, <code>ABS(a)</code></entry>
+  <entry><code>a &ne; |?|</code></entry></row>
+<row><entry><code>uabs_of_abs</code></entry>
+  <entry><code>BND(|a|)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>abs_of_uabs</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry><code>BND(|a|)</code></entry>
+  <entry><code>a &ne; |?|</code>, <code>a~</code></entry></row>
+<row><entry><code>constant{1,2,10}</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry></entry>
+  <entry><code>a</code> number</entry></row>
+<row><entry><code>abs_fix</code></entry>
+  <entry><code>FIX(|a|)</code></entry>
+  <entry><code>FIX(a)</code></entry>
+  <entry><code>a~</code></entry></row>
+<row><entry><code>abs_flt</code></entry>
+  <entry><code>FLT(|a|)</code></entry>
+  <entry><code>FLT(a)</code></entry>
+  <entry><code>a~</code></entry></row>
+<row><entry><code>neg_fix</code></entry>
+  <entry><code>FIX(-a)</code></entry>
+  <entry><code>FIX(a)</code></entry>
+  <entry><code>a~</code></entry></row>
+<row><entry><code>neg_flt</code></entry>
+  <entry><code>FLT(-a)</code></entry>
+  <entry><code>FLT(a)</code></entry>
+  <entry><code>a~</code></entry></row>
+<row><entry><code>add_fix</code></entry>
+  <entry><code>FIX(a + b)</code></entry>
+  <entry><code>FIX(a)</code>, <code>FIX(b)</code></entry>
+  <entry><code>a~</code> or <code>b~</code></entry></row>
+<row><entry><code>sub_fix</code></entry>
+  <entry><code>FIX(a - b)</code></entry>
+  <entry><code>FIX(a)</code>, <code>FIX(b)</code></entry>
+  <entry><code>a~</code> or <code>b~</code></entry></row>
+<row><entry><code>sub_flt</code></entry>
+  <entry><code>FLT(a - b)</code></entry>
+  <entry><code>FLT(a)</code>, <code>FLT(b)</code>, <code>REL(a,b)</code></entry>
+  <entry><code>a~</code> or <code>b~</code></entry></row>
+<row><entry><code>sub_flt_rev</code></entry>
+  <entry><code>FLT(b - a)</code></entry>
+  <entry><code>FLT(a)</code>, <code>FLT(b)</code>, <code>REL(a,b)</code></entry>
+  <entry><code>a~</code> or <code>b~</code></entry></row>
+<row><entry><code>mul_fix</code></entry>
+  <entry><code>FIX(a * b)</code></entry>
+  <entry><code>FIX(a)</code>, <code>FIX(b)</code></entry>
+  <entry><code>a~</code> or <code>b~</code></entry></row>
+<row><entry><code>mul_flt</code></entry>
+  <entry><code>FLT(a * b)</code></entry>
+  <entry><code>FLT(a)</code>, <code>FLT(b)</code></entry>
+  <entry><code>a~</code> or <code>b~</code></entry></row>
+<row><entry><code>fix_of_flt_bnd</code></entry>
+  <entry><code>FIX(a)</code></entry>
+  <entry><code>FLT(a)</code>, <code>ABS(a)</code></entry>
+  <entry><code>a~</code>, <code>a &ne; -?</code>, <code>a &ne; |?|</code></entry></row>
+<row><entry><code>flt_of_fix_bnd</code></entry>
+  <entry><code>FLT(a)</code></entry>
+  <entry><code>FIX(a)</code>, <code>ABS(a)</code></entry>
+  <entry><code>a~</code>, <code>a &ne; -?</code>, <code>a &ne; |?|</code></entry></row>
+<row><entry><code>fix_of_singleton_bnd</code></entry>
+  <entry><code>FIX(a)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>flt_of_singleton_bnd</code></entry>
+  <entry><code>FLT(a)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>bnd_of_nzr_rel</code></entry>
+  <entry><code>BND((b - a) / a)</code></entry>
+  <entry><code>NZR(a)</code>, <code>REL(b,a)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>rel_of_nzr_bnd</code></entry>
+  <entry><code>REL(a, b)</code></entry>
+  <entry><code>NZR(b)</code>, <code>BND((a - b) / b)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>add_rr</code></entry>
+  <entry><code>REL(a + b, c + d)</code></entry>
+  <entry><code>REL(a, c)</code>, <code>REL(b, d)</code>, <code>BND(c / (c + d))</code>, <code>NZR(c + d)</code></entry>
+  <entry></entry></row>
+<row><entry><code>sub_rr</code></entry>
+  <entry><code>REL(a - b, c - d)</code></entry>
+  <entry><code>REL(a, c)</code>, <code>REL(b, d)</code>, <code>BND(c / (c - d))</code>, <code>NZR(c - d)</code></entry>
+  <entry></entry></row>
+<row><entry><code>mul_rr</code></entry>
+  <entry><code>REL(a * b, c * d)</code></entry>
+  <entry><code>REL(a, c)</code>, <code>REL(b, d)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>div_rr</code></entry>
+  <entry><code>REL(a / b, c / d)</code></entry>
+  <entry><code>REL(a, c)</code>, <code>REL(b, d)</code>, <code>NZR(d)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>compose</code></entry>
+  <entry><code>REL(b, c)</code></entry>
+  <entry><code>REL(b, a)</code>, <code>REL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>compose</code></entry>
+  <entry><code>REL(c, a)</code></entry>
+  <entry><code>REL(c, b)</code>, <code>REL(b, a)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>compose_swap</code></entry>
+  <entry><code>REL(c * b, d)</code></entry>
+  <entry><code>REL(c, d * a')</code>, <code>REL(b, 1 / a')</code>, <code>NZR(a')</code></entry>
+  <entry><code>a = 1 / a'</code></entry></row>
+<row><entry><code>error_of_rel_{nop}{nop}</code></entry>
+  <entry><code>BND(b - a)</code></entry>
+  <entry><code>REL(b, a)</code>, <code>BND(a)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>nzr_of_abs</code></entry>
+  <entry><code>NZR(a)</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>nzr_of_nzr_rel</code></entry>
+  <entry><code>NZR(b)</code></entry>
+  <entry><code>NZR(a)</code>, <code>REL(b, a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>nzr_of_nzr_rel_rev</code></entry>
+  <entry><code>NZR(a)</code></entry>
+  <entry><code>NZR(b)</code>, <code>REL(b, a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>bnd_div_of_rel_bnd_div</code></entry>
+  <entry><code>BND((b - a) / c)</code></entry>
+  <entry><code>REL(b, a)</code>, <code>BND(a / c)</code>, <code>NZR(c)</code></entry>
+  <entry></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+</section>
+
+<section>
+<title>Theorems about rounding operators</title>
+
+<para>...</para>
+</section>
+
+<section>
+<title>Rewriting rules</title>
+
+<para>The following theorems are used to propagate properties about a
+term to some provably equal term.</para>
+
+<informaltable frame='all'>
+<tgroup cols='3'>
+<thead>
+<row><entry>Theorem name</entry><entry>Goal</entry><entry>Hypotheses</entry></row>
+</thead>
+<tbody>
+<row><entry><code>bnd_rewrite</code></entry>
+  <entry><code>BND(a)</code></entry>
+  <entry><code>EQL(a, b)</code>, <code>BND(b)</code></entry></row>
+<row><entry><code>abs_rewrite</code></entry>
+  <entry><code>ABS(a)</code></entry>
+  <entry><code>EQL(a, b)</code>, <code>ABS(b)</code></entry></row>
+<row><entry><code>fix_rewrite</code></entry>
+  <entry><code>FIX(a)</code></entry>
+  <entry><code>EQL(a, b)</code>, <code>FIX(b)</code></entry></row>
+<row><entry><code>flt_rewrite</code></entry>
+  <entry><code>FLT(a)</code></entry>
+  <entry><code>EQL(a, b)</code>, <code>FLT(b)</code></entry></row>
+<row><entry><code>rel_rewrite_1</code></entry>
+  <entry><code>REL(a, c)</code></entry>
+  <entry><code>EQL(a, b)</code>, <code>REL(b, c)</code></entry></row>
+<row><entry><code>rel_rewrite_2</code></entry>
+  <entry><code>REL(c, a)</code></entry>
+  <entry><code>EQL(a, b)</code>, <code>REL(c, b)</code></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>For the sake of readability, the following theorems are not written
+with <code>BND</code> predicates but rather with expressions only. When
+trying to obtain some enclosure of the target expression (goal), Gappa
+will first consider the source one (hypothesis). As a consequence of this
+layout and contrarily to previous tables, constraints will also list
+additional hypotheses needed to apply the rules. Whenever an operator is
+put between square brackets, it means that only theorems that perform
+basic interval arithmetic will be able to match it.</para>
+
+<informaltable frame='all'>
+<tgroup cols='4'>
+<thead>
+<row><entry>Theorem name</entry><entry>Target</entry><entry>Source</entry><entry>Constraints</entry></row>
+</thead>
+<tbody>
+<row><entry><code>opp_mibs</code></entry>
+  <entry><code>-a - -b</code></entry>
+  <entry><code>[-] (a - b)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>add_xals</code></entry>
+  <entry><code>b + c</code></entry>
+  <entry><code>(b - a) [+] (a + c)</code></entry>
+  <entry></entry></row>
+<row><entry><code>add_xars</code></entry>
+  <entry><code>c + b</code></entry>
+  <entry><code>(c + a) [+] (b - a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>add_mibs</code></entry>
+  <entry><code>(a + b) - (c + d)</code></entry>
+  <entry><code>(a - c) [+] (b - d)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>add_fils</code></entry>
+  <entry><code>(a + b) - (a + c)</code></entry>
+  <entry><code>b - c</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>add_firs</code></entry>
+  <entry><code>(a + b) - (c + b)</code></entry>
+  <entry><code>a - c</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>add_filq</code></entry>
+  <entry><code>((a + b) - (a + c)) / (a + c)</code></entry>
+  <entry><code>(b - c) / (a + c)</code></entry>
+  <entry><code>NZR(a + c)</code>, <code>b &ne; c</code></entry></row>
+<row><entry><code>add_firq</code></entry>
+  <entry><code>((a + b) - (c + b)) / (c + b)</code></entry>
+  <entry><code>(a - c) / (c + b)</code></entry>
+  <entry><code>NZR(c + b)</code>, <code>a &ne; c</code></entry></row>
+<row><entry><code>sub_xals</code></entry>
+  <entry><code>b - c</code></entry>
+  <entry><code>(b - a) [+] (a - c)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; c</code></entry></row>
+<row><entry><code>sub_xars</code></entry>
+  <entry><code>c - b</code></entry>
+  <entry><code>(c - a) [-] (b - a)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>sub_mibs</code></entry>
+  <entry><code>(a - b) - (c - d)</code></entry>
+  <entry><code>(a - c) [-] (b - d)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>sub_fils</code></entry>
+  <entry><code>(a - b) - (a - c)</code></entry>
+  <entry><code>[-] (b - c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>sub_firs</code></entry>
+  <entry><code>(a - b) - (c - b)</code></entry>
+  <entry><code>a - c</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>sub_filq</code></entry>
+  <entry><code>((a - b) - (a - c)) / (a - c)</code></entry>
+  <entry><code>[-] (b - c) / (a - c)</code></entry>
+  <entry><code>NZR(a - c)</code>, <code>b &ne; c</code></entry></row>
+<row><entry><code>sub_firq</code></entry>
+  <entry><code>((a - b) - (c - b)) / (c - b)</code></entry>
+  <entry><code>(a - c) / (c - b)</code></entry>
+  <entry><code>NZR(c - b)</code>, <code>a &ne; c</code></entry></row>
+<row><entry><code>mul_xals</code></entry>
+  <entry><code>b * c</code></entry>
+  <entry><code>((b - a) [*] c) [+] (a * c)</code></entry>
+  <entry></entry></row>
+<row><entry><code>mul_xars</code></entry>
+  <entry><code>c * b</code></entry>
+  <entry><code>(c [*] (b - a)) [+] (c * a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>mul_fils</code></entry>
+  <entry><code>a * b - a * c</code></entry>
+  <entry><code>a [*] (b - c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>mul_firs</code></entry>
+  <entry><code>a * b - c * b</code></entry>
+  <entry><code>(a - c) [*] b</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>mul_mars</code></entry>
+  <entry><code>a * b - c * d</code></entry>
+  <entry><code>(a [*] (b - d)) [+] ((a - c) [*] d)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>mul_mals</code></entry>
+  <entry><code>a * b - c * d</code></entry>
+  <entry><code>((a - c) [*] b) [+] (c [*] (b - d))</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>mul_mabs</code></entry>
+  <entry><code>a * b - c * d</code></entry>
+  <entry><code>(a [*] (b - d)) [+] ((a - c) [*] b) [-] ((a - c) [*] (b - d))</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>mul_mibs</code></entry>
+  <entry><code>a * b - c * d</code></entry>
+  <entry><code>(c [*] (b - d)) [+] ((a - c) [*] d) [+] ((a - c) [*] (b - d))</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; d</code></entry></row>
+<row><entry><code>div_xals</code></entry>
+  <entry><code>b / c</code></entry>
+  <entry><code>((b - a) / c) [+] (a / c)</code></entry>
+  <entry><code>NZR(c)</code>, <code>a &ne; c</code>, <code>b &ne; c</code></entry></row>
+<row><entry><code>div_fir</code></entry>
+  <entry><code>(a * b) / b</code></entry>
+  <entry><code>a</code></entry>
+  <entry><code>NZR(b)</code></entry></row>
+<row><entry><code>div_fil</code></entry>
+  <entry><code>(a * b) / a</code></entry>
+  <entry><code>b</code></entry>
+  <entry><code>NZR(a)</code></entry></row>
+<row><entry><code>sqrt_mibs</code></entry>
+  <entry><code>sqrt(a) - sqrt(b)</code></entry>
+  <entry><code>(a - b) [/] (sqrt(a) [+] sqrt(b))</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>sqrt_mibq</code></entry>
+  <entry><code>(sqrt(a) - sqrt(b)) / sqrt(b)</code></entry>
+  <entry><code>sqrt(1 [+] ((a - b) / b)) [-] 1</code></entry>
+  <entry><code>BND(a)</code>, <code>BND(b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>sub_xals</code></entry>
+  <entry><code>c - a</code></entry>
+  <entry><code>(c - b) [+] (b - a)</code></entry>
+  <entry><code>a &ne; c</code>, <code>b &ne; c</code></entry></row>
+<row><entry><code>val_xabs</code></entry>
+  <entry><code>b</code></entry>
+  <entry><code>a [+] (b - a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>val_xebs</code></entry>
+  <entry><code>a</code></entry>
+  <entry><code>b [-] (b - a)</code></entry>
+  <entry></entry></row>
+<row><entry><code>val_xabq</code></entry>
+  <entry><code>b</code></entry>
+  <entry><code>a [*] (1 [+] ((b - a) / a))</code></entry>
+  <entry><code>NZR(a)</code></entry></row>
+<row><entry><code>val_xebq</code></entry>
+  <entry><code>a</code></entry>
+  <entry><code>b [/] (1 [+] ((b - a) / a))</code></entry>
+  <entry><code>NZR(a)</code>, <code>NZR(b)</code></entry></row>
+<row><entry><code>square_sqrt</code></entry>
+  <entry><code>sqrt(a) * sqrt(a)</code></entry>
+  <entry><code>a</code></entry>
+  <entry><code>BND(a)</code></entry></row>
+<row><entry><code>addf_1</code></entry>
+  <entry><code>a / (a + b)</code></entry>
+  <entry><code>1 [/] (1 [+] (b / a))</code></entry>
+  <entry><code>NZR(a)</code>, <code>NZR(a + b)</code></entry></row>
+<row><entry><code>addf_2</code></entry>
+  <entry><code>a / (a + b)</code></entry>
+  <entry><code>1 [-] (b / (a + b))</code></entry>
+  <entry><code>NZR(a + b)</code></entry></row>
+<row><entry><code>addf_3</code></entry>
+  <entry><code>a / (a - b)</code></entry>
+  <entry><code>1 [/] (1 [-] (b / a))</code></entry>
+  <entry><code>NZR(a)</code>, <code>NZR(a - b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>addf_4</code></entry>
+  <entry><code>a / (a - b)</code></entry>
+  <entry><code>1 [+] (b / (a - b))</code></entry>
+  <entry><code>NZR(a - b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>addf_5</code></entry>
+  <entry><code>b / (a + b)</code></entry>
+  <entry><code>1 [/] ((a / b) [+] 1)</code></entry>
+  <entry><code>NZR(b)</code>, <code>NZR(a + b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>addf_6</code></entry>
+  <entry><code>b / (a + b)</code></entry>
+  <entry><code>1 [-] (a / (a + b))</code></entry>
+  <entry><code>NZR(a + b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>addf_7</code></entry>
+  <entry><code>b / (a - b)</code></entry>
+  <entry><code>1 [/] ((a / b) [-] 1)</code></entry>
+  <entry><code>NZR(b)</code>, <code>NZR(a - b)</code>, <code>a &ne; b</code></entry></row>
+<row><entry><code>addf_8</code></entry>
+  <entry><code>b / (a - b)</code></entry>
+  <entry><code>((a / (a - b)) [-] 1)</code></entry>
+  <entry><code>NZR(a)</code>, <code>NZR(a - b)</code>, <code>a &ne; b</code></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>There are also some rewriting rules dealing with <code>REL</code>
+predicates.</para>
+
+<informaltable frame='all'>
+<tgroup cols='4'>
+<thead>
+<row><entry>Theorem name</entry><entry>Target</entry><entry>Source</entry><entry>Constraints</entry></row>
+</thead>
+<tbody>
+<row><entry><code>opp_fibq</code></entry>
+  <entry><code>REL(-a, -b)</code></entry>
+  <entry><code>REL(a, b)</code></entry>
+  <entry></entry></row>
+<row><entry><code>mul_filq</code></entry>
+  <entry><code>REL(a * b, a * c)</code></entry>
+  <entry><code>REL(b, c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>mul_firq</code></entry>
+  <entry><code>REL(a * b, c * b)</code></entry>
+  <entry><code>REL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>div_firq</code></entry>
+  <entry><code>REL(a / b, c / b)</code></entry>
+  <entry><code>REL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>Finally, there are theorems performing basic congruence.</para>
+
+<informaltable frame='all'>
+<tgroup cols='4'>
+<thead>
+<row><entry>Theorem name</entry><entry>Target</entry><entry>Source</entry><entry>Constraints</entry></row>
+</thead>
+<tbody>
+<row><entry><code>opp_fibe</code></entry>
+  <entry><code>EQL(-a, -b)</code></entry>
+  <entry><code>EQL(a, b)</code></entry>
+  <entry><code>a &ne; b</code></entry></row>
+<row><entry><code>add_file</code></entry>
+  <entry><code>EQL(a + b, a + c)</code></entry>
+  <entry><code>EQL(b, c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>add_fire</code></entry>
+  <entry><code>EQL(a + b, c + b)</code></entry>
+  <entry><code>EQL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>sub_file</code></entry>
+  <entry><code>EQL(a - b, a - c)</code></entry>
+  <entry><code>EQL(b, c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>sub_fire</code></entry>
+  <entry><code>EQL(a - b, c - b)</code></entry>
+  <entry><code>EQL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>mul_file</code></entry>
+  <entry><code>EQL(a * b, a * c)</code></entry>
+  <entry><code>EQL(b, c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>mul_fire</code></entry>
+  <entry><code>EQL(a * b, c * b)</code></entry>
+  <entry><code>EQL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+<row><entry><code>div_file</code></entry>
+  <entry><code>EQL(a / b, a / c)</code></entry>
+  <entry><code>EQL(b, c)</code></entry>
+  <entry><code>b &ne; c</code></entry></row>
+<row><entry><code>div_fire</code></entry>
+  <entry><code>EQL(a / b, c / b)</code></entry>
+  <entry><code>EQL(a, c)</code></entry>
+  <entry><code>a &ne; c</code></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+</section>
+
+</section>

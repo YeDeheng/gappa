@@ -1,0 +1,119 @@
+<section>
+<title>Rounding directions</title>
+
+<para>Some of the classes of operators presented in the following sections are
+templated by a rounding direction. This is the direction chosen when converting
+a real number that cannot be exactly represented in the destination format.</para>
+
+<para>There are eleven directions:</para>
+
+<variablelist>
+<varlistentry><term><code>zr</code></term>
+  <listitem><para>toward zero</para></listitem></varlistentry>
+<varlistentry><term><code>aw</code></term>
+  <listitem><para>away from zero</para></listitem></varlistentry>
+<varlistentry><term><code>dn</code></term>
+  <listitem><para>toward minus infinity (down)</para></listitem></varlistentry>
+<varlistentry><term><code>up</code></term>
+  <listitem><para>toward plus infinity</para></listitem></varlistentry>
+<varlistentry><term><code>od</code></term>
+  <listitem><para>to odd mantissas</para></listitem></varlistentry>
+<varlistentry><term><code>ne</code></term>
+  <listitem><para>to nearest, tie breaking to even mantissas</para></listitem></varlistentry>
+<varlistentry><term><code>no</code></term>
+  <listitem><para>to nearest, tie breaking to odd mantissas</para></listitem></varlistentry>
+<varlistentry><term><code>nz</code></term>
+  <listitem><para>to nearest, tie breaking toward zero</para></listitem></varlistentry>
+<varlistentry><term><code>na</code></term>
+  <listitem><para>to nearest, tie breaking away from zero</para></listitem></varlistentry>
+<varlistentry><term><code>nd</code></term>
+  <listitem><para>to nearest, tie breaking toward minus infinity</para></listitem></varlistentry>
+<varlistentry><term><code>nu</code></term>
+  <listitem><para>to nearest, tie breaking toward plus infinity</para></listitem></varlistentry>
+</variablelist>
+
+<para>The rounding directions mandated by the IEEE-754 standard are
+<code>ne</code> (default mode, rounding to nearest), <code>zr</code>,
+<code>dn</code>, <code>up</code>, and <code>na</code> (introduced for
+decimal arithmetic).</para>
+</section>
+
+<section>
+<title>Floating-point operators</title>
+
+<para>This class of operators covers all the formats whose number sets are
+<texinline>F(p,d) = \{m \times 2^e; |m| \lt 2^p, e \ge d\}</texinline>. In
+particular, IEEE-754 floating-point formats (with subnormal numbers) are part
+of this class, if we set apart overflow issues. Both parameters p and d select
+a particular format. The last parameter selects the rounding direction.</para>
+
+<programlisting><![CDATA[float< precision, minimum_exponent, rounding_direction >(...)]]></programlisting>
+
+<para>Having to remember the precision and minimum exponent parameters may be
+a bit tedious, so an alternate syntax is provided: instead of these two
+parameters, a name can be given to the <code>float</code> class.</para>
+
+<programlisting><![CDATA[float< name, rounding_direction >(...)]]></programlisting>
+
+<para>There are four predefined formats:</para>
+
+<variablelist>
+<varlistentry><term><code>ieee_32</code></term>
+  <listitem><para>IEEE-754 single precision</para></listitem></varlistentry>
+<varlistentry><term><code>ieee_64</code></term>
+  <listitem><para>IEEE-754 double precision</para></listitem></varlistentry>
+<varlistentry><term><code>ieee_128</code></term>
+  <listitem><para>IEEE-754 quadruple precision</para></listitem></varlistentry>
+<varlistentry><term><code>x86_80</code></term>
+  <listitem><para>extended precision on x86-like processors</para></listitem></varlistentry>
+</variablelist>
+</section>
+
+<section>
+<title>Fixed-point operators</title>
+
+<para>This class of operators covers all the formats whose number sets are
+<texinline>F(e) = \{m \times 2^e\}</texinline>. The first parameter selects
+the weight of the least significant bit. The second parameter selects the
+rounding direction.</para>
+
+<programlisting><![CDATA[fixed< lsb_weight, rounding_direction >(...)]]></programlisting>
+
+<para>Rounding to integer is a special case of fixed point rounding of weight
+0. A syntactic shortcut is provided.</para>
+
+<programlisting><![CDATA[int< rounding_direction >(...)]]></programlisting>
+</section>
+
+<section>
+<title>Miscellaneous operators</title>
+
+<para>The following operators are underspecified and therefore not
+suitable for formal proofs.</para>
+
+<section>
+<title>Functions with relative error</title>
+
+<para>This set of functions is defined with related theorems on relative error.
+They can be used to express properties that cannot be directly expressed
+through unary rounding operators.</para>
+
+<programlisting><![CDATA[{add|sub|mul}_rel< precision [, minimum_exponent] >(..., ...)]]></programlisting>
+
+<para>If the minimum exponent is not provided, the bound on the relative
+error is assumed to be valid on the entire domain. Otherwise the interval
+<texinline>[-2^e,2^e]</texinline> is excluded from the domain.</para>
+
+<para>Talking about the expression
+<code>add_rel&lt;20,-60&gt;(a,b)</code> is like talking about a fresh
+expression <code>c</code> such that <code><![CDATA[not |a + b| <= 1b-60
+-> |c -/ (a + b)| <= 1b-20]]></code>.</para>
+
+</section>
+
+<section>
+<title>Rounding operators with homogen properties</title>
+
+<para>To be written.</para>
+</section>
+</section>

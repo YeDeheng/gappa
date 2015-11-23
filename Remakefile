@@ -1,0 +1,164 @@
+all: src/gappa
+
+clean: src/clean doc/clean testsuite/clean
+
+check: testsuite/check-null testsuite/check-coq testsuite/check-latex
+
+Remakefile: Remakefile.in config.status
+	./config.status Remakefile
+
+config.h stamp-config_h: config.h.in config.status
+	./config.status config.h
+	touch stamp-config_h
+
+configure config.status config.h.in stamp-config_h.in: configure.in
+	autoheader
+	autoconf
+	touch stamp-config_h.in
+	./config.status --recheck
+
+%.o: %.cpp
+	g++  -g -O2 -MMD -MT dummy -MF $@.d -I src -c -o $@ $<
+	./remake -r < $@.d
+	rm $@.d
+
+src/parser/parser.o src/parser/lexer.o: src/parser/parser.hpp
+
+src/parameters.o src/parser/ring.o: config.h
+
+src/parser/parser.cpp src/parser/parser.hpp: src/parser/parser.ypp
+	bison -y -d -o src/parser/parser.cpp src/parser/parser.ypp
+
+src/parser/lexer.cpp: src/parser/lexer.lpp
+	flex -o src/parser/lexer.cpp src/parser/lexer.lpp
+
+#	src/backends/holl.o \
+
+OBJS = \
+	src/arithmetic/fixed.o \
+	src/arithmetic/float.o \
+	src/arithmetic/homogen.o \
+	src/arithmetic/relative.o \
+	src/backends/backend.o \
+	src/backends/coq.o \
+	src/backends/coq_common.o \
+	src/backends/coq_lambda.o \
+	src/backends/latex.o \
+	src/numbers/interval.o \
+	src/numbers/io.o \
+	src/numbers/real.o \
+	src/numbers/round.o \
+	src/parser/ast.o \
+	src/parser/lexer.o \
+	src/parser/parser_aux.o \
+	src/parser/parser.o \
+	src/parser/pattern.o \
+	src/parser/ring.o \
+	src/proofs/basic_proof.o \
+	src/proofs/dichotomy.o \
+	src/proofs/proof_graph.o \
+	src/proofs/property.o \
+	src/proofs/rewriting.o \
+	src/proofs/schemes.o \
+	src/proofs/updater.o \
+	src/main.o \
+	src/parameters.o
+
+src/gappa: $(OBJS)
+	g++  -o src/gappa $(OBJS) -lmpfr -lgmp 
+
+src/clean:
+	rm -f $(OBJS)
+	cd src
+	rm -f gappa parser/parser.hpp parser/parser.cpp parser/lexer.cpp
+
+doc/gappa-news.xml: NEWS
+	cd doc ; ./changelog.pl > ./gappa-news.xml
+
+doc/gappa-preprocessed.xml: doc/gappa-news.xml
+	cd doc
+	xsltproc --load-trace -o gappa-preprocessed.xml gappa-preprocess.xsl gappa.xml 2> xml.deps
+	cd ..
+	./remake `sed -n -e "\\,//,! s,^.*URL=\"\\([^\"]*\\).*\$,doc/\\1,p" doc/xml.deps`
+	rm doc/xml.deps
+
+doc/html/index.html: doc/gappa-preprocessed.xml doc/gappa-html.xsl
+	cd doc
+	rm -rf html/
+	mkdir html
+	xsltproc gappa-html.xsl gappa-preprocessed.xml
+	cp -r gappa.css images html/
+
+doc/gappa.pdf: doc/gappa-preprocessed.xml doc/gappa-pdf.xsl doc/gappa.sty
+	cd doc
+	dblatex -p gappa-pdf.xsl -s gappa.sty -o gappa.pdf gappa-preprocessed.xml
+
+doc/clean:
+	cd doc
+	rm -rf gappa-preprocessed.xml gappa-news.xml gappa.pdf html/
+
+testsuite/check-%: src/gappa
+	set +e
+	BACKEND=$*
+	cd testsuite
+	logfile="failures-$BACKEND-`date '+%Y-%m-%d'`.log"
+	logtmp="log-$BACKEND.tmp"
+	outputtmp="output-$BACKEND.tmp"
+	cat /dev/null > "$logtmp"
+	cat /dev/null > "$logfile"
+	for f in *.g; do
+	  execute=0
+	  if grep -e '^# back-end:' "$f" > /dev/null; then
+	    grep -e '^# back-end:.*'$BACKEND "$f" > /dev/null
+	    execute=$?
+	  fi
+	  if [ $execute -eq 0 ]; then
+	    timeout 5 ../src/gappa -B$BACKEND "$f" > /dev/null 2> "$outputtmp"
+	    return_code=$?
+	    if [ ${return_code} -ne 0 ]; then
+	      (echo "*** $f exited with error code ${return_code}"; cat "$outputtmp"; echo) >> "$logfile"
+	      echo "$f exited with error code ${return_code}" >> "$logtmp"
+	    fi
+	    rm "$outputtmp"
+	  fi
+	done
+	return_code=0
+	if [ -s $logtmp ]; then
+	  echo "*** Failures for $BACKEND backend:"
+	  cat "$logtmp"
+	  return_code=1
+	else
+	  rm "$logfile"
+	fi
+	rm "$logtmp"
+	exit ${return_code}
+
+testsuite/clean:
+	rm -f testsuite/failures-*.log
+
+install:
+	prefix=/usr/local
+	exec_prefix=${prefix}
+	mkdir -p ${exec_prefix}/bin
+	cp src/gappa ${exec_prefix}/bin
+
+EXTRA_DIST = \
+	configure \
+	config.h.in \
+	stamp-config_h.in \
+	src/parser/parser.cpp \
+	src/parser/parser.hpp \
+	src/parser/lexer.cpp
+
+dist: $(EXTRA_DIST)
+	PACK=gappa-1.0.0
+	DIRS=`git ls-tree -d -r --name-only HEAD`
+	FILES=`git ls-tree -r --name-only HEAD`
+	rm -rf $PACK.tar.gz $PACK
+	mkdir $PACK
+	for d in $DIRS; do mkdir $PACK/$d; done
+	for f in $FILES $(EXTRA_DIST); do cp $f $PACK/$f; done
+	git log --pretty="format:%ad %s" --date=short > $PACK/ChangeLog
+	rm `find $PACK -name .gitignore`
+	tar czf $PACK.tar.gz $PACK
+	rm -rf $PACK

@@ -1,0 +1,266 @@
+<section>
+<title>Sections of a Gappa script</title>
+
+<para>A Gappa script contains three parts. The first one is used to give names
+to some expressions in order to simplify the writing of the next parts. The
+second one is the logical formula one wants to prove with the tool. The third
+one gives some hints to Gappa on how to prove it.</para>
+
+<para>The following script shows these three parts for the example of
+<xref linkend="example-x1mx"/>.</para>
+
+<programlisting language="gappa"><![CDATA[# some notations for making the script readable
+@rnd = float<ieee_32, ne>;
+x = rnd(xx);
+y rnd= x * (1 - x);
+z = x * (1 - x);
+
+# the logical formula that Gappa will try (and succeed) to prove
+{ x in [0,1] -> y in [0,0.25] /\ y - z in [-3b-27,3b-27] }
+
+# three hints to help Gappa finding the proof
+z -> 0.25 - (x - 0.5) * (x - 0.5);
+y $ x;
+y - z $ x;]]></programlisting>
+
+<section>
+<title>Logical formula</title>
+
+<para>This is the fundamental part of the script, it contains the logical
+formula Gappa is expected to prove. This formula is written between brackets
+and can contain any implication, disjunction, conjunction, negation of
+properties of mathematical expressions. These properties can be enclosures,
+inequalities, relative errors, equalities, and expression precisions. Any
+identifier without definition is assumed to be universally quantified over
+the set of real numbers.</para>
+
+<section>
+<title>Enclosures</title>
+
+<para>Enclosures are either bounded ranges or inequalities. In positive
+position, ranges can be left unspecified. Gappa will then suggest a range
+such that the logical formula is verified.</para>
+
+<programlisting language="gappa"><![CDATA[{ x - 2 in [-2,0] /\ (x + 1 in [0,2] -> y in [3,4]) -> not x <= 1 \/ x + y in ? }]]></programlisting>
+<screen><![CDATA[Results:
+  x + y in [3, 5]]]></screen>
+
+<para>Note that Gappa might be able to prove the formula without even
+having to fill the unspecified ranges. In that case, Gappa will not display
+anything.</para>
+
+<programlisting language="gappa"><![CDATA[{ x in [1,2] /\ x - 3 >= 0 -> x + 1 in ? }
+# notice the contradiction between the hypotheses]]></programlisting>
+
+<para>Inequalities that give an upper bound on an absolute value are treated
+specially. They are assumed to be full enclosures with a lower bound equal
+to zero. In other words, <code>|x| &lt;= 1</code> is syntactic sugar for
+<code>|x| in [0,1]</code>.</para>
+
+<para>Gappa does not know much about inequalities, as they never appear as
+hypotheses of its theorems. They can only be used to refine a previously
+computed enclosure. For instance, Gappa cannot deduce a contradiction from
+<code>x * x &lt;= -1</code> alone. It needs to know either an enclosure of
+<code>x</code> or a nonnegative enclosure of <code>x * x</code>.</para>
+</section>
+
+<section>
+<title>Relative errors</title>
+
+<para>The relative error between an approximate value <code>x</code> and a more
+precise value <code>y</code> is expressed by <code>(x - y) / y</code>. For
+instance, when one wants to prove a bound on it, one can write:</para>
+<programlisting language="gappa"><![CDATA[{ ... -> |(x - y) / y| <= 0x1p-53 }]]></programlisting>
+
+<para>However, this bound can only be obtained if <code>y</code> is (proved to
+be) nonzero. Similarly, if a hypothesis was a bound on a relative error, this
+hypothesis would be usable by Gappa only if it can prove that its denominator
+is nonzero.</para>
+
+<para>Gappa provides another way of expressing relative errors which does not
+depend on the denominator being nonzero. It cannot be used as a subexpression;
+it can only be used as the left-hand side of an enclosure:</para>
+<programlisting language="gappa"><![CDATA[{ ... -> x -/ y in [-0x1p-53,0x1p-53] }]]></programlisting>
+
+<para>This enclosure on the relative error represents the following
+proposition: <texinline>\exists \epsilon \in [-2^{-53},2^{-53}],\ x = y
+\times (1 + \epsilon)</texinline>.</para>
+
+<para>When the bounds on a relative error are symmetric, the enclosure can be
+written as <code>|x -/ y| &lt;= ...</code> instead.</para>
+</section>
+
+<section>
+<title>Equalities</title>
+
+<para>While equalities could be encoded with enclosures,</para>
+<programlisting language="gappa"><![CDATA[{ ... -> x - y in [0,0] -> ...]]></programlisting>
+
+<para>Gappa also understands the following notation:</para>
+<programlisting language="gappa"><![CDATA[{ ... -> x = y -> ... }]]></programlisting>
+
+<para>Note that equalities are implicitly directed from left to right.
+For instance, when looking for a property on <code>a + x</code>, Gappa
+will consider <code>a + y</code> (assuming that property <code>x =
+y</code> holds), but not the other way around. This is similar to the
+handling of <link linkend="hint-rewriting">rewriting rules</link>.</para>
+
+<para>Whenever possible, equalities should be expressed as <link
+linkend="definitions">definitions</link> rather than inside the logical
+formulas, as it offers more opportunities for Gappa to apply its
+theorems.</para>
+</section>
+
+<section>
+<title>Expression precision</title>
+
+<para>In addition to equalities and inequalities, Gappa also supports
+properties about the precision needed to represent expressions. These
+are expressed by using the predicates <code>@FIX(x,k)</code> and
+<code>@FLT(x,k)</code> where <code>x</code> is an expression and
+<code>k</code> an integer. Both properties state that <code>x</code>
+can be decomposed as a generic binary floating-point number:
+<texinline>\exists m,e \in Z,~x = m \cdot 2^e</texinline>. For
+<code>@FIX</code> this decomposition satisfies <texinline>e \ge
+k</texinline>, while for <code>@FLT</code> it satisfies <texinline>|m|
+\lt 2^k</texinline>. For instance, the following Gappa formula
+holds</para>
+<programlisting language="gappa"><![CDATA[x = float<ieee_32,ne>(x_);
+{ @FIX(x,-149) /\ @FLT(x,24) }]]></programlisting>
+</section>
+
+</section>
+
+<section id="definitions">
+<title>Definitions</title>
+
+<para>Typing the whole expressions in the logical formula can soon become
+annoying and error-prone, especially if they contain rounding operators. To
+ease this work, the user can define in another section beforehand the
+expressions that will be used more than once. A special syntax also allows to
+avoid embedding rounding operators everywhere.</para>
+
+<para>First, rounding operators can be given a shorter name by using the
+<code>@name = definition&lt;parameters&gt;</code> syntax. <code>name</code> can
+then be used wherever the whole definition would have been used.</para>
+
+<para>Next, common sub-terms of a mathematical expression can be shared by
+giving them a name with the <code>name = term</code> syntax. This name can then
+be used in later definitions or in the logical formula or in the hints. The
+equality itself does not hold any semantic meaning. Gappa will only use the
+name as a shorter expression when displaying the sub-term, and in the generated
+proof instead of a randomly generated name.</para>
+
+<para>Finally, when all the arithmetic operations on the right side of a
+definition are followed by the same rounding operator, this operator can be
+put once and for all on the left of the equal symbol. For example, with the
+following script, Gappa will complain that <code>y</code> and <code>z</code>
+are two different names for the same expression.</para>
+
+<programlisting language="gappa"><![CDATA[@rnd = float<ieee_32, ne>;
+y = rnd(x * rnd(1 - x));
+z rnd= x * (1 - x);
+{ y - z >= 0 }]]></programlisting>
+</section>
+
+<section>
+<title>Hints</title>
+
+<para>Hints for Gappa's engine can be added in this last section, if the
+tool is not able to prove the logical formula. These hints are either
+<link linkend="hint-rewriting">rewriting rules</link> or <link
+linkend="hint-dichotomy">bisection directives</link>. <link
+linkend="hint-approx">Approximate and accurate</link> expressions can
+also be provided in this section in order to generate implicit rewriting
+rules.</para>
+</section>
+
+</section>
+
+<!-- ###### -->
+
+<section>
+<title>Preferred expressions and other peculiarities</title>
+
+<para>Gappa rewrites expressions by matching them with well-known patterns. The
+enclosure of an unmatchable expression will necessarily have to be computed
+through interval arithmetic. As a consequence, to ensure that the expressions
+will benefit from as much rewriting as possible, special care needs to be taken
+when expressing the computational errors.</para>
+
+<section>
+<title>Absolute and relative errors</title>
+
+<para>Let <code>exact</code> be an arithmetic expression and <code>approx</code>
+an approximation of <code>exact</code>. The approximation usually contains
+rounding operators while the exact expression does not. The absolute error
+between these two expressions is their difference: <code>approx - exact</code>.</para>
+
+<para>Writing the errors differently will prevent Gappa from applying
+theorems on rounding errors: <code>-(x - rnd(x))</code> may lead to a
+worse enclosure than <code>rnd(x) - x</code>.</para>
+
+<para>The situation is similar for the relative error. It should be
+expressed as the quotient between the absolute error and the exact value:
+<code>(approx - exact) / exact</code>. For enclosures of relative errors,
+this is the same: <code>approx -/ exact</code>.</para>
+</section>
+
+<section>
+<title>Global errors</title>
+
+<para>The <code>approx</code> and <code>exact</code> expressions need to have
+a similar structure in order for the rewriting rules to kick in. E.g., if
+<code>exact</code> is a sum of two terms <code>a</code> and <code>b</code>,
+then <code>approx</code> has to be the sum of two terms <code>c</code> and
+<code>d</code> such that <code>c</code> and <code>d</code> are approximations
+of <code>a</code> and <code>b</code> respectively.</para>
+
+<para>Indeed the rewriting rule for the absolute error of the addition is:
+<code>(a + b) - (c + d) -&gt; (a - c) + (b - d)</code>. Similarly, the
+rewriting rules for the multiplication keep the same ordering of sub-terms.
+For example, one of the rules is:
+<code>a * b - c * d -&gt; (a - c) * b + c * (b - d)</code>. Therefore,
+one should try not to mess with the structure of expressions.</para>
+
+<para>If the two sides of an error expression happen to not have a
+similar structure, then a user rewriting rule has to be added in order to
+put them in a suitable state. For instance, let us assume we are
+interested in the absolute error between <code>a</code> and
+<code>d</code>, but they have dissimilar structures. Yet there are two
+expressions <code>b</code> and <code>c</code> that are equal and with
+structures similar to <code>a</code> for <code>b</code> and
+<code>d</code> for <code>c</code>. Then we just have to add the following
+hints to help Gappa:</para>
+<programlisting language="gappa"><![CDATA[b - c -> 0; # or "b-c in [0,0]" as a hypothesis
+a ~ b; # a is an approximation of b
+c ~ d; # c is an approximation of d]]></programlisting>
+</section>
+
+<section>
+<title>Discrete values</title>
+
+<para>When an expression is known to take a few separate values that are
+not equally distributed, a disjunction is the simplest solution but it
+can be avoided if needed. For instance, if <code>x</code> can only be 0,
+2, or 17, one can write:</para>
+<programlisting language="gappa"><![CDATA[x = i * (19b-1 * i - 15b-1);
+{ @FIX(i, 0) /\ i in [-1,1] -> ... }
+$ i in 3; # this dichotomy hint helps Gappa to understand that i is either -1, 0, or 1]]></programlisting>
+</section>
+
+<section>
+<title>Disjunction</title>
+
+<para>When the goal of a formula contains a disjunction, one of the sides
+of this disjunction has to always hold with respect to the set of
+hypotheses. This is especially important when performing dichotomies.
+Even if Gappa is able to prove the formula in each particular branch of a
+dichotomy, if a different property of the disjunction is used each time,
+the tool will fail to prove the formula in the general case. Note that,
+whenever a contradiction is found for a specific set of hypotheses,
+whichever side of the disjunction holds no longer matter, since Gappa can
+infer any of them.</para>
+</section>
+
+</section>

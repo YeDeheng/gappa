@@ -1,0 +1,164 @@
+<section id="why">
+<title>Why and Gappa</title>
+
+<para>The <ulink url="http://why.lri.fr/">Why</ulink> software
+verification platform can be used to translate code annotated with pre-
+and postconditions into proof obligations suitable for Gappa.</para>
+
+<para>By installing <ulink url="http://frama-c.com/">Frama-C</ulink>
+first and then Why (in order to build the Jessie plugin), one gets a tool
+for directly certifying C programs with Gappa.</para>
+
+<section>
+<title>Example: floating-point square root</title>
+
+<para>The example below demonstrates the usage of these tools. The C
+file defines a <code>sqrt</code> function that computes the square root
+with a relative accuracy of <texinline>2^{-43}</texinline> for an input
+<varname>x</varname> between 0.5 and 2.</para>
+
+<programlisting language="c"><![CDATA[/*@
+ requires 0.5 <= x <= 2;
+ ensures \abs(\result - 1/\sqrt(x)) <= 0x1p-6 * \abs(1/\sqrt(x));
+*/
+double sqrt_init(double x);
+
+/*@
+ lemma quadratic_newton: \forall real x, t; x > 0 ==>
+   \let err = (t - 1 / \sqrt(x)) / (1 / \sqrt(x));
+   (0.5 * t * (3 - t * t * x) - 1 / \sqrt(x)) / (1 / \sqrt(x)) ==
+   - (1.5 + 0.5 * err) * (err * err);
+*/
+
+/*@
+ requires 0.5 <= x <= 2;
+ ensures \abs(\result - \sqrt(x)) <= 0x1p-43 * \abs(\sqrt(x));
+*/
+double sqrt(double x)
+{
+  int i;
+  double t, u;
+  t = sqrt_init(x);
+
+  /*@ loop pragma UNROLL 4;
+    @ loop invariant 0 <= i <= 3; */
+  for (i = 0; i <= 2; ++i) {
+    u = 0.5 * t * (3 - t * t * x);
+    //@ assert \abs(u - 0.5 * t * (3 - t * t * x)) <= 1;
+    /*@ assert \let err = (t - 1 / \sqrt(x)) / (1 / \sqrt(x));
+          (0.5 * t * (3 - t * t * x) - 1 / \sqrt(x)) / (1 / \sqrt(x)) ==
+          - (1.5 + 0.5 * err) * (err * err); */
+    //@ assert \abs(u - 1 / \sqrt(x)) <= 0x1p-10 * \abs(1 / \sqrt(x));
+    t = u;
+  }
+
+  //@ assert x * (1 / \sqrt(x)) == \sqrt(x);
+  return x * t;
+}]]></programlisting>
+
+<para>The code starts by calling the <code>sqrt_init</code> function. It
+returns an approximation of <texinline>x^{-1/2}</texinline> with a
+relative accuracy of <texinline>2^{-6}</texinline>. Only the
+specification of this auxiliary function is given. (Preconditions are
+introduced by the <code>requires</code> keyword, while postconditions are
+introduced by <code>ensures</code>.) Its implementation could use small
+tables for instance. Note that bounds on relative errors are expressed as
+<texinline>|\mathit{approx} - \mathit{exact}| \le \mathit{error} \times
+|\mathit{exact}|</texinline> in this setting.</para>
+
+<para>The <code>sqrt</code> function then performs three Newton
+iterations in order to obtain an improved approximation of the reciprocal
+square root of <varname>x</varname>. Since Gappa only handles
+straight-line programs, a pragma annotation instructs Frama-C to
+completely unroll the loop before passing it to Jessie. Finally, once the
+reciprocal square root has been computed, it is multiplied by
+<varname>x</varname> to obtain the square root.</para>
+
+</section>
+
+<section>
+<title>Passing hints through annotations</title>
+
+<para>The <code>assert</code> annotations cause Frama-C/Jessie to
+generate additional proof obligations. These facts are then available to
+the following proof obligations as hypotheses. In this example, the
+actual content of the assertions does not matter from a certification
+point of view, they are only used as a way to pass information to Gappa.
+Indeed, as explained in <xref linkend="example-fixed"/>, Gappa needs to
+know about Newton's relation and which expressions are approximations of
+what. So, if the program were to be directly expressed in Gappa syntax,
+the three loop assertions would instead have been written as
+follows.</para>
+
+<programlisting language="gappa"><![CDATA[
+rsqrt = 1 / sqrt(x);
+err = (t - rsqrt) / rsqrt;
+{ ... }
+u ~ 0.5 * t * (3 - t * t * x);
+(0.5 * t * (3 - t * t * x) - rsqrt) / rsqrt -> - (1.5 + 0.5 * err) * (err * err);
+u ~ rsqrt;
+]]></programlisting>
+
+<para>When writing these assertions for guiding Gappa, one just as to
+make sure that they are easily provable; their actual accuracy is not
+relevant. For instance, if the relative distance between
+<varname>u</varname> and <texinline>1 / \sqrt{x}</texinline> had been
+<texinline>2^{-1}</texinline> instead of <texinline>2^{-10}</texinline>,
+Gappa would still have succeeded.</para>
+
+</section>
+
+<section>
+<title>Execution results</title>
+
+<para>Passing the program above to the Frama-C/Jessie tool produces the
+following console output...</para>
+
+<screen><![CDATA[$ frama-c -jessie a.c
+[kernel] preprocessing with "gcc -C -E -I.  -dD a.c"
+[jessie] Starting Jessie translation
+[kernel] No code for function sqrt_init, default assigns generated
+[jessie] Producing Jessie files in subdir a.jessie
+[jessie] File a.jessie/a.jc written.
+[jessie] File a.jessie/a.cloc written.
+[jessie] Calling Jessie tool in subdir a.jessie
+Generating Why function sqrt
+[jessie] Calling VCs generator.
+gwhy-bin [...] why/a.why
+Computation of VCs...
+Computation of VCs done.
+Reading GWhy configuration...
+Loading .gwhyrc config file
+GWhy configuration loaded...
+Creating GWhy Tree view...]]></screen>
+
+<para>...and displays the following user interface.</para>
+
+<mediaobject>
+  <imageobject><imagedata fileref="images/gwhy-sqrt.png" format="PNG" align="center" scale="30"/></imageobject>
+</mediaobject>
+
+<para>On the left of the window are the proof obligations. Once all of
+them are proved, the code is guaranteed to match its specification. Green
+marks flag proof obligations that were automatically proved. Selected
+proof obligations are displayed on the right; here it is the
+postcondition of the <code>sqrt</code> function.</para>
+
+<para>Gappa is not able to prove Newton's relation nor does it know that
+<texinline>x \times \sqrt{x}^{-1} = \sqrt{x}</texinline> holds. These assertions
+are therefore left unproved. Due to loop unrolling, Newton's relation
+appears three times. To factor these occurrences, a lemma describing the
+relation has been added to the C code. The <ulink
+url="http://alt-ergo.lri.fr/">Alt-Ergo</ulink> prover is used to check
+that the three occurrences indeed match this lemma.</para>
+
+<para>In the end, we have 72 proof obligations and only two of them are
+left unproved by the combination of Gappa and Alt-Ergo. They are
+mathematical identities on real-valued expressions, so they could easily
+be checked with an interactive proof assistant or a computer algebra
+system. (And they should be, at least for Newton's relation, because of
+its error-prone expression.)</para>
+
+</section>
+
+</section>

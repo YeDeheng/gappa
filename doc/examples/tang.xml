@@ -1,0 +1,137 @@
+<section>
+<title>Tang's exponential function</title>
+
+<section>
+<title>The algorithm</title>
+
+<para>In <emphasis>Table-Driven Implementation of the Exponential Function
+in IEEE Floating-Point Arithmetic</emphasis>, Ping Tak Peter Tang described
+an implementation of an almost correctly-rounded elementary function in
+single and double precision. John Harrison later did a complete formal proof
+in HOL Light of the implementation in <emphasis>Floating point verification
+in HOL Light: the exponential function</emphasis>.</para>
+
+<para>Here we just focus on the tedious computation of the rounding error. We
+consider neither the argument reduction nor the reconstruction part (trivial
+anyway, excepted when the end result is subnormal). We want to prove that, in
+the C code below, the absolute error between <code>e</code> and the exponential
+<code>E0</code> of <code>R0</code> (the ideal reduced argument) is less than
+0.54 ulp. Variable <code>n</code> is an integer and all the other variables are
+single-precision floating-point numbers.</para>
+
+<programlisting language="c">r2 = -n * l2;
+r = r1 + r2;
+q = r * r * (a1 + r * a2);
+p = r1 + (r2 + q);
+s = s1 + s2;
+e = s1 + (s2 + s * p);</programlisting>
+
+<para>Let us note <code>R</code> the computed reduced argument and
+<code>S</code> the stored value of the ideal constant <code>S0</code>. There
+are 32 such constants. For the sake of simplicity, we only consider the
+second constant: <texinline>2^{\frac{1}{32}}</texinline>. <code>E</code> is
+the value of the expression <code>e</code> computed with an infinitely
+precise arithmetic. <code>Z</code> is the absolute error between the
+polynomial <texinline>x + a_1 \cdot x^2 + a_2 \cdot x^3</texinline> and
+<texinline>\exp(x) - 1</texinline> for <texinline>|x| \le \frac{\log 2}{64}
+</texinline>.</para>
+
+</section>
+
+<section>
+<title>Gappa description</title>
+
+<programlisting language="gappa"><![CDATA[a1 = 8388676b-24;
+a2 = 11184876b-26;
+l2 = 12566158b-48;
+s1 = 8572288b-23;
+s2 = 13833605b-44;
+
+r2 rnd= -n * l2;
+r rnd= r1 + r2;
+q rnd= r * r * (a1 + r * a2);
+p rnd= r1 + (r2 + q);
+s rnd= s1 + s2;
+e rnd= s1 + (s2 + s * p);
+
+R = r1 + r2;
+S = s1 + s2;
+
+E0 = S0 * (1 + R0 + a1 * R0 * R0 + a2 * R0 * R0 * R0 + Z);
+
+{ Z in [-55b-39,55b-39] /\ S - S0 in [-1b-41,1b-41] /\ R - R0 in [-1b-34,1b-34] /\
+  R in [0,0.0217] /\ n in [-10176,10176]
+   ->
+  e in ? /\ e - E0 in ? }]]></programlisting>
+
+<para>Gappa is unable to bound the expressions. This is not surprising
+for <code>e - E0</code>, since the tool is missing some of the implicit
+transformations hidden in the implementation. As for <code>e</code>
+itself, Gappa is missing the range of <code>r1</code>. Since Gappa has
+access to the ranges of <code>R</code> and <code>r2</code>, this issue can
+be solved by adding the hint: <code>r1 -&gt; R - r2</code>.</para>
+
+<para>Please note the way <code>Z</code> is introduced. Its definition is
+backward: <code>Z</code> is a real number such that <code>E0</code> is the
+product of <code>S0</code> and the exponential of <code>R0</code>. It makes for
+clearer definitions and it avoids having to deal with divisions.</para>
+
+<para>Now to <code>e - E0</code>. We compute this error by splitting it between
+a pure rounding error <code>e - E</code> and another term which combines
+discretization and truncation errors. This term is <code>E - E0</code>.
+Unfortunately, Gappa is unable to compute tight bounds for this term since the
+syntactic structures of its sub-terms do not match.</para>
+
+<para>So we introduce a new expression <code>Er</code> equal to <code>E</code>
+yet matching the structure of <code>E0</code>. Since <code>Z</code> has no
+equivalent term in <code>E</code>, we insert an artificial term <code>0</code>
+in the corresponding place in <code>Er</code>.</para>
+
+<programlisting language="gappa">E = s1 + (s2 + S * (r1 + (r2 + R * R * (a1 + R * a2))));
+Er = S * (1 + R + a1 * R * R + a2 * R * R * R + 0);
+...
+e - E0 -> (e - E) + (Er - E0);</programlisting>
+
+</section>
+
+<section>
+<title>Full listing</title>
+
+<programlisting language="gappa"><![CDATA[@rnd = float< ieee_32, ne >;
+
+a1 = 8388676b-24;
+a2 = 11184876b-26;
+l2 = 12566158b-48;
+s1 = 8572288b-23;
+s2 = 13833605b-44;
+
+r2 rnd= -n * l2;
+r rnd= r1 + r2;
+q rnd= r * r * (a1 + r * a2);
+p rnd= r1 + (r2 + q);
+s rnd= s1 + s2;
+e rnd= s1 + (s2 + s * p);
+
+R = r1 + r2;
+S = s1 + s2;
+
+E = s1 + (s2 + S * (r1 + (r2 + R * R * (a1 + R * a2))));
+Er = S * (1 + R + a1 * R * R + a2 * R * R * R + 0);
+E0 = S0 * (1 + R0 + a1 * R0 * R0 + a2 * R0 * R0 * R0 + Z);
+
+{ Z in [-55b-39,55b-39] /\ S - S0 in [-1b-41,1b-41] /\ R - R0 in [-1b-34,1b-34] /\
+  R in [0,0.0217] /\ n in [-10176,10176] ->
+  e in ? /\ e - E0 in ? }
+
+e - E0 -> (e - E) + (Er - E0);
+r1 -> R - r2;]]></programlisting>
+
+<para>Gappa answers that the error is bounded by 0.535 ulp. This is consistent
+with the bounds computed by Tang and Harrison.</para>
+
+<screen>Results:
+  e in [8572295b-23 {1.0219, 2^(0.0312489)}, 4380173b-22 {1.04431, 2^(0.0625575)}]
+  e - E0 in [-75807082762648785b-80 {-6.27061e-08, -2^(-23.9268)}, 154166255364809243b-81 {6.37617e-08, 2^(-23.9027)}]</screen>
+
+</section>
+</section>

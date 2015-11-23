@@ -1,0 +1,151 @@
+/*
+   Copyright (C) 2004 - 2010 by Guillaume Melquiond <guillaume.melquiond@inria.fr>
+   Part of the Gappa tool http://gappa.gforge.inria.fr/
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the CeCILL Free Software License Agreement or
+   under the terms of the GNU General Public License version.
+
+   See the COPYING and COPYING.GPL files for more details.
+*/
+
+%{
+
+#include <iostream>
+#include <map>
+#include <string>
+#include <gmp.h>
+
+#include "parser/ast.hpp"
+#include "proofs/dichotomy.hpp"
+#include "parameters.hpp"
+
+#include "parser/parser.hpp"
+
+static void read_number(YYSTYPE *yylval) {
+  int dec = -1;
+  char const *ptr = yytext;
+  bool hexa = ptr[1] == 'x'; // valid offset
+  if (hexa) ptr += 2;
+  ast_number num;
+  for(; *ptr; ++ptr) {
+    char c = *ptr;
+    if (c == '.') { dec = 0; continue; }
+    if (c >= 'a') c += 'A' - 'a';
+    if (hexa ? (c == 'P') : (c > '9')) break;
+    if (dec >= 0) ++dec;
+    num.mantissa += c;
+  }
+  switch (*ptr) {
+  case 'b': case 'B': case 'p': case 'P': ++ptr; num.base = 2; break;
+  case 'e': case 'E': ++ptr; num.base = 10; break;
+  default: num.base = hexa ? 2 : 10;
+  }
+  if (*ptr) num.exponent = atoi(ptr);
+  else num.exponent = 0;
+  if (dec > 0) num.exponent -= hexa ? dec * 4 : dec;
+  mpz_t m;
+  mpz_init(m);
+  mpz_set_str(m, num.mantissa.c_str(), hexa ? 16 : 10);
+  while (num.exponent < 0 && mpz_divisible_ui_p(m, num.base)) {
+    mpz_divexact_ui(m, m, num.base);
+    ++num.exponent;
+  }
+  char *s = mpz_get_str(NULL, 10, m);
+  num.mantissa = std::string(1, '+') + s;
+  free(s);
+  mpz_clear(m);
+  if (num.exponent == 0) num.base = 1;
+  yylval->number = normalize(num);
+}
+
+static int read_ident(YYSTYPE *yylval) {
+  ast_ident *n = ast_ident::find(yytext);
+  yylval->ident = n;
+  switch (n->type)
+  {
+    case ID_NONE: return IDENT;
+    case ID_VAR:  return VARID;
+    case ID_FUN:  return FUNID;
+    default: assert(false); return IDENT;
+  }
+}
+
+static void read_options(YYLTYPE &yylloc) {
+  std::string s = yytext;
+  std::string::size_type begin, end = 2;
+  while ((begin = s.find_first_not_of(" \t", end)) != std::string::npos) {
+    end = s.find_first_of(" \t", begin);
+    if (end == std::string::npos) end = s.size();
+    std::string o = s.substr(begin, end - begin);
+    if (!parse_option(o, true)) {
+      std::cerr << "Error: unrecognized option '" << o << "' at line " << yylloc.first_line << ".\n";
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+#define YY_USER_INIT	{ yylloc->first_line = 1; yylloc->first_column = 0; }
+#define YY_USER_ACTION	yylloc->first_column += yyleng;
+
+%}
+
+%option noyywrap nounput
+%option bison-locations
+
+alpha	[a-zA-Z]
+digit	[0-9]
+
+ident		{alpha}({alpha}|{digit}|_)*
+integer		{digit}+
+hexa		[0-9a-fA-F]+
+binary		{integer}([bB][-+]?{integer})?
+decimal		(({integer}(\.{integer}?)?)|(\.{integer}))([eE][-+]?{integer})?
+hexadecimal	0x(({hexa}(\.{hexa}?)?)|(\.{hexa}))([pP][-+]?{integer})?
+number		({binary}|{decimal}|{hexadecimal})
+zero		((((0+(\.0*)?)|(\.0+))([eE][-+]?{integer})?)|0x(((0+(\.0*)?)|(\.0+))([pP][-+]?{integer})?)|(0+([bB][-+]?{integer})?))
+
+%s prop_context hint_context
+
+%%
+
+[ \t]
+[\r]?\n		{ ++yylloc->first_line; yylloc->first_column = 0; }
+#@[^\r\n]*	read_options(*yylloc);
+#[^\r\n]*
+"/\\"		return AND;
+"\\/"		return OR;
+"->"		return IMPL;
+"not"		return NOT;
+"in"		return IN;
+"<>"		return NE;
+"<="		return LE;
+<prop_context>">="	return GE;
+"sqrt"		return SQRT;
+"log"		return LOG;
+"exp"		return EXP;
+"log2"		return LOG2;
+"exp2"		return EXP2;
+"fma"		return FMA;
+"-/"		return RDIV;
+"@FIX"		return FIX;
+"@FLT"		return FLT;
+{zero}		{ yylval->number = token_zero; return NUMBER; }
+{number}	{ read_number(yylval); return NUMBER; }
+{ident}		{ return read_ident(yylval); }
+"{"		{ BEGIN(prop_context); return '{'; }
+"}"		{ BEGIN(hint_context); return '}'; }
+.		return yytext[0];
+
+%%
+
+void change_input(std::string const &n)
+{
+  FILE *f = fopen(n.c_str(), "r");
+  if (!f)
+  {
+    perror("Error while opening input file");
+    exit(EXIT_FAILURE);
+  }
+  yyin = f;
+}

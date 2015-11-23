@@ -1,0 +1,437 @@
+Version 1.0.0:
+ * syntax
+   - recognized "e <> 0" for inputting NZR properties
+ * fact database
+   - added some new theorems for NZR
+ * back-ends
+   - added a back-end producing LaTeX files
+   - disabled HOL Light back-end as it was not used
+   - enabled automatic dichotomy and formula reduction
+ * proof graph
+   - allowed arbitrary formulas as output of nodes
+ * main interface
+   - removed option -Msequent as formulas are handled as a whole now
+
+Version 0.18.0:
+ * main interface
+   - removed option -Mexpensive
+   - added more details to -Mstatistics
+ * proof graph
+   - improved performances
+   - improved proof simplification
+ * Coq back-end
+   - fixed incorrect theorem name for square root
+
+Version 0.17.1:
+ * build system
+   - fixed issues with MacOSX, BSD, and compilation flags
+
+Version 0.17.0:
+ * build system
+   - switched to remake
+ * fact database
+   - added theorems relating the ranges of two expressions, given the relative error between them
+   - simplified squaring
+ * proof graph
+   - allowed logic simplifications, even in case of indeterminate intervals
+ * documentation
+   - added list of theorems
+
+Version 0.16.6:
+ * Coq lambda back-end
+   - fixed crash on goals that are trivial implications
+
+Version 0.16.5;
+ * arithmetic
+   - fixed incorrect round-off error for values close to zero
+
+Version 0.16.4:
+ * proof graph
+   - fixed crash when dichotomy fails to prove properties other than BND
+
+Version 0.16.3:
+ * proof graph
+   - fixed crash when performing dichotomy while there are properties other than BND
+
+Version 0.16.2:
+ * Coq lambda back-end
+   - fixed incorrect certificate for intersection lemmas
+
+Version 0.16.1:
+ * proof graph
+   - fixed segfault when splitting cases on a degenerate goal
+   - reenabled logic reasoning for ABS and REL predicates
+ * Coq lambda back-end
+   - fixed signature of theorem mul_firs
+
+Version 0.16.0:
+ * Coq lambda back-end
+   - fixed syntax of proofs containing no variables
+   - fixed typing of some floating-point constants
+   - fixed signature of theorems rel_refl, div_fil, div_fir
+ * Coq script back-end
+   - fixed typing of some floating-point constants
+   - fixed syntax for Coq support library 0.17
+ * fact database
+   - added support for proving equalities between constants
+   - changed fixed_of_fix so that it produces an EQL property
+
+Version 0.15.1:
+ * fact database:
+   - fixed broken simplification of a*b -/ c*b
+
+Version 0.15.0:
+ * fact database:
+   - added EQL predicate: e1 = e2
+   - changed user rewriting to use the EQL predicate
+   - improved rewriting rules to handle ABS, FIX, FLT, NZR, REL in addition to BND predicate
+ * syntax:
+   - added "@FLT(e,k)" and "@FIX(e,k)" for inputting FLT and FIX properties
+   - added "e1 = e2" for inputting EQL properties
+   - allowed arbitrary logical propositions as termination condition for bisection
+
+Version 0.14.1:
+ * build system
+   - fixed some platform-specific issues
+
+Version 0.14.0:
+ * Coq back-end
+   - added support for Coq support library 0.14
+
+Version 0.13.0:
+ * Coq lambda back-end
+   - simplified generated proofs
+ * proof graph
+   - disabled sequent generation
+   - disabled proof tracking for the null back-end
+   - improved handling of deep logic negations
+   - handled disjunctions by dichotomies (null back-end only)
+ * main interface
+   - removed option -Monly-failure since there is only one proposition
+ * documentation
+   - switched from jade to dblatex
+
+Version 0.12.3:
+ * Coq lambda back-end
+   - fixed incorrect invocation of some theorems
+ * arithmetic
+   - fixed incorrect proofs for floating-point error near powers of two
+
+Version 0.12.2:
+ * back-ends
+   - fixed output of underspecified REL goals
+
+Version 0.12.1:
+ * proof graph
+   - fixed sequents with empty goals not being recognized as proved
+ * main interface
+   - added option -Msequent to display goals as Gappa scripts
+   - added option -Monly-failure to limit output to failing goals
+   - improved display of extremely small/big bounds
+   - improved display of rounding operators
+ * proof paths
+   - fixed inequalities (lower bound) on absolute values being ignored
+ * arithmetic
+   - improved relative operators handling when exponents are not constrained
+
+Version 0.12.0:
+ * back-ends
+   - added back-end for producing Coq lambda terms
+     (support is limited to what the Coq tactic can handle)
+ * proof graph
+   - fixed handling of complicated goals
+ * main interface
+   - added output of failed subgoals
+
+Version 0.11.3:
+ * Coq back-end
+   - applied correct theorems for intervals with infinite bounds
+
+Version 0.11.2:
+ * parser
+   - fixed handling of CRLF end of line
+
+Version 0.11.1:
+ * main interface
+   - removed error code on options --help and --version
+
+Version 0.11.0:
+ * proof graph
+   - avoided splitting provably-singleton intervals
+   - added score system for favoring successful schemes
+ * arithmetic
+   - tightened rounding error when applied to short values
+ * syntax
+   - recognized lhs of user rewriting as potential user approximate
+   - added "x -/ y in ..." and "|x -/ y| <= ..." for REL properties
+ * build system
+   - fixed compilation on Cygwin
+
+Version 0.10.0:
+ * proof graph
+   - avoided infinite dichotomy on some unprovable propositions
+ * back-ends
+   - fixed generation of subset facts
+ * fact database
+   - reduced cycles in theorems
+ * main interface
+   - added -Mschemes option for generating .dot scheme graphs
+   - allowed input filename on command line
+
+Version 0.9.0:
+ * syntax
+   - added constraints on user rewriting, e.g. "x -> 1/(1/x) { x <> 0 }"
+ * whole engine
+   - added detection of assumed facts in -Munconstrained mode
+ * fact database
+   - added relative error propagation through division
+ * back-ends
+   - fixed cache collisions between theorems
+ * proof graph
+   - fixed intersection of relative errors
+   - enabled bound simplification through rewriting rules
+   - fixed handling of half-bounded goals
+
+Version 0.8.0:
+ * HOL Light back-end
+   - added new back-end
+ * proof graph
+   - added option -Mexpensive to select best paths on length
+ * fact database
+   - added predicate REL: x = y * (1 + e)
+   - replaced rewriting rules on relative error by computations on REL
+   - enhanced path finder to fill holes in theorems
+   - put back rewriting rules to theorem level
+   - fixed incorrect equality of variables
+   - added predicate NZR: x <> 0
+   - added propagation of FIX and FLT through rounding operators
+
+Version 0.7.3:
+ * fact database
+   - generalized rounding theorems to any combination of errors and predicates
+ * whole engine
+   - removed dependencies between sequents
+ * parser
+   - removed automatic rounding of negated expressions
+   - equated numbers with exponent zero but different radices
+   - fixed grammar for multiple splits
+ * proof graph
+   - improved quality of fixed split
+
+Version 0.7.2:
+ * parser
+   - fixed incorrectly rounded intervals on input
+ * fact database
+   - restricted domain of some rewriting rules
+
+Version 0.7.1:
+ * fact database
+   - added error propagation through opposite, division, and square root
+ * Coq back-end
+   - fixed confusion between nodes from different proof graphs
+   - optimized away trivial goal nodes
+
+Version 0.7.0:
+ * Coq back-end
+   - updated to support Gappa library version 0.1
+ * proof graph
+   - added optimization pass for bound precision
+ * whole engine
+   - simplified back-end handling
+
+Version 0.6.5:
+ * Coq back-end
+   - fixed square root generation
+ * fact database
+   - disabled square root of negative numbers
+ * syntax
+   - added fma(a,b,c) as a synonym for a*b+c
+ * arithmetic
+   - added fma_rel
+ * main interface
+   - added -Ereverted-fma option to change the meaning of fma(a,b,c) to c+a*b
+
+Version 0.6.4:
+ * arithmetic
+   - fixed influence zone again for floating-point absolute error
+
+Version 0.6.3:
+ * proof graph
+   - fixed failure when an inequality leads to a contradiction
+   - added support for intersecting ABS predicates
+ * hint parser
+   - added detection of useless hints
+ * parser
+   - normalized numbers with fractional part ending by zero
+
+Version 0.6.2:
+ * fact database
+   - fixed dependencies of rewriting rules relying on non-zero values; a race could lead to failed theorems
+   - added formulas to compute the relative error of a sum
+ * arithmetic
+   - added new directed rounding: to odd, away from zero
+   - added new rounding to nearest with tie breaking: to odd, to zero, away from zero, up, down
+   - fixed influence zone for floating-point absolute error
+
+Version 0.6.1:
+ * proof paths
+   - improved detection of dead paths
+ * fact database
+   - fixed patterns for generalized rounding operators
+   - improved rewriting rules for approx/accurate pairs
+   - renamed rewriting rules
+
+Version 0.6.0:
+ * syntax
+   - added ways of specifying how interval splitting is done
+   - added detection of badly-formed intervals in propositions
+   - removed limitation on multiple hypotheses about the same expression
+   - improved heuristic for detecting approx/accurate pairs
+   - removed limitation on number of accurate expressions for a given approximate
+   - removed hack for accurate expressions of rounded expressions (potentially disruptive)
+ * whole engine
+   - added inequalities; as hypotheses, they cannot imply theorems but they can restrict computed ranges
+ * proof paths
+   - put rewriting schemes to a higher level to remove constraints on approx/accurate pairs
+   - added rewriting rules for replacing an accurate expression by an approximate and an error
+
+Version 0.5.6:
+ * fact database
+   - cleaned theorems and removed redundant ones
+ * arithmetic
+   - enabled test to zero with relative rounding, it can still be disabled by -Munconstrained
+ * Coq back-end
+   - improved script generation
+ * proof graph
+   - fixed premature halt when a case split was a failure
+   - fixed case split not noticing newly discovered bounds
+ * main interface
+   - simplified display of hypotheses and sorted display of goals
+
+Version 0.5.5:
+ * whole engine
+   - added square root (no rule checking though)
+   - modified rewriting rules to apply to approximates instead of just rounded values
+   - added ABS predicate to workaround abuse of absolute values in theorems
+ * syntax
+   - added syntax to define user approximates
+ * fact database
+   - added option to disable constraint checking around zero
+ * arithmetic
+   - generalized fixed-point range enforcing to any expression
+ * proof paths
+   - enhanced the detection of dead paths that contain cycles
+
+Version 0.5.4:
+ * syntax
+   - reduced the number of false-positive for unbound identifiers
+   - merged variables and functions anew in order to correctly detect define-after-uses errors
+ * proof graph
+   - added fifo processing of proof schemes
+   - handled case splitting on empty goals
+   - added more general schemes for case splitting
+ * hint parser
+   - shut up warning messages about trivial integers as denominator
+
+Version 0.5.3:
+ * proof graph
+   - fixed goal removal: undefined goals require "optimal" solutions
+
+Version 0.5.2:
+ * proof graph
+   - simplified node memory handling
+   - simplified graph handling
+   - put dichotomy at a higher level, outside of proof schemes
+   - replaced hypothesis property vectors by bit vectors, stored in-place if possible
+ * syntax
+   - added detection of unbound identifiers
+ * whole engine
+   - added support for complex logical properties
+
+Version 0.5.1:
+ * whole engine
+   - added FIX and FLT predicates in addition to the original BND predicate
+
+Version 0.5.0:
+ * whole engine
+   - generalized rounding modes as functions
+   - generalized functions with rounding theorems
+   - removed default rounding theorems
+ * syntax
+   - split variables and functions
+   - simplified rounding and function syntax: purely C++-template-like syntax
+   - added NOT and OR logical operators
+ * arithmetic
+   - replaced relative rounding by functions
+   - factored number rounding handling
+   - added fixed-point arithmetic
+   - generalized floating-point rounding modes to any triplet (precision, subnormal smallest exponent, direction)
+ * proof graph
+   - reduced the number of node types by demoting theorem and axiom nodes to internal facts
+
+Version 0.4.12:
+ * syntax
+   - added a way to define new names for rounding operators
+   - simplified the handling of negative numbers
+ * Coq back-end
+   - fixed representation of relative rounding
+
+Version 0.4.11:
+ * proof graph
+   - fixed a missing dependency cleanup for an owned union node
+ * main interface
+   - added parsing of embedded options
+
+Version 0.4.10:
+ * proof graph
+   - changed the node hypotheses to be graph hypotheses
+ * fact database
+   - switched some other facts to the absolute value of the denominators
+   - added an explicit exclusion pattern for the rewriting rules (e.g. "x * x" is no more excluded)
+ * main interface
+   - added basic command-line parsing for warnings and parameters
+
+Version 0.4.9:
+ * numbers and arithmetic
+   - separated number handling from special arithmetic
+   - added "relative", a format for handling varying precision rounding
+ * formulas
+   - implemented absolute value
+ * fact database
+   - made relative error depends on absolute value of the range
+ * proof graph
+   - fixed a bug related to the clean-up of the last graph of a dichotomy
+   - strengthened the role of modus nodes
+
+Version 0.4.8:
+ * fact database
+   - tightened intervals for "a + b + a * b"
+   - discarded multiple occurrences of the same term in the rewriting rules
+   - cleaned up rewriting rules
+
+Version 0.4.7:
+ * hint parser
+   - sped up verification
+
+Version 0.4.6:
+ * floating-point numbers
+   - disabled relative error for subnormal numbers (potentially disruptive)
+ * homogen numbers
+   - cleaned up
+   - added non-homogen double rounded format
+ * hint parser
+   - added pseudo-support for quotient in hint
+ * parser
+   - added support for C99 hexadecimal floating-point format
+ * proof graph
+   - replaced useless empty intersections by contradiction proofs
+
+Version 0.4.5:
+ * proof graph
+   - reworked modus ponens creation to fix an assertion failure in lemma invocation
+ * fact database
+   - added conditional rules (potentially disruptive)
+ * homogen numbers
+   - split roundings between initialization and computation
+ * Coq back-end
+   - implemented union

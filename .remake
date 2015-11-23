@@ -1,0 +1,46 @@
+Remakefile : Remakefile.in config.status
+all : src/gappa
+check : testsuite/check-coq testsuite/check-latex testsuite/check-null
+clean : doc/clean src/clean testsuite/clean
+config.h stamp-config_h : config.h.in config.status
+configure config.status config.h.in stamp-config_h.in : configure.in
+dist : config.h.in configure src/parser/lexer.cpp src/parser/parser.cpp src/parser/parser.hpp stamp-config_h.in
+doc/clean :
+doc/gappa-news.xml : NEWS
+doc/gappa-preprocessed.xml : doc/gappa-news.xml
+doc/gappa.pdf : doc/gappa-pdf.xsl doc/gappa-preprocessed.xml doc/gappa.sty
+doc/html/index.html : doc/gappa-html.xsl doc/gappa-preprocessed.xml
+install :
+src/arithmetic/fixed.o : src/arithmetic/fixed.cpp src/numbers/interval.hpp src/numbers/interval_arith.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/pattern.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp
+src/arithmetic/float.o : src/arithmetic/float.cpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/pattern.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp src/utils.hpp
+src/arithmetic/homogen.o : src/arithmetic/homogen.cpp src/numbers/interval.hpp src/numbers/interval_arith.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/property.hpp
+src/arithmetic/relative.o : src/arithmetic/relative.cpp src/numbers/interval.hpp src/numbers/interval_arith.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/property.hpp
+src/backends/backend.o : src/backends/backend.cpp src/backends/backend.hpp src/utils.hpp
+src/backends/coq.o : src/backends/backend.hpp src/backends/coq.cpp src/backends/coq_common.hpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/pattern.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/utils.hpp
+src/backends/coq_common.o : src/backends/backend.hpp src/backends/coq_common.cpp src/backends/coq_common.hpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/utils.hpp
+src/backends/coq_lambda.o : src/backends/backend.hpp src/backends/coq_common.hpp src/backends/coq_lambda.cpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp
+src/backends/latex.o : src/backends/backend.hpp src/backends/latex.cpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp
+src/clean :
+src/gappa : src/arithmetic/fixed.o src/arithmetic/float.o src/arithmetic/homogen.o src/arithmetic/relative.o src/backends/backend.o src/backends/coq.o src/backends/coq_common.o src/backends/coq_lambda.o src/backends/latex.o src/main.o src/numbers/interval.o src/numbers/io.o src/numbers/real.o src/numbers/round.o src/parameters.o src/parser/ast.o src/parser/lexer.o src/parser/parser.o src/parser/parser_aux.o src/parser/pattern.o src/parser/ring.o src/proofs/basic_proof.o src/proofs/dichotomy.o src/proofs/proof_graph.o src/proofs/property.o src/proofs/rewriting.o src/proofs/schemes.o src/proofs/updater.o
+src/main.o : src/backends/backend.hpp src/main.cpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/parameters.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp
+src/numbers/interval.o : src/numbers/interval.cpp src/numbers/interval.hpp src/numbers/interval_arith.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp
+src/numbers/io.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/io.cpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/property.hpp
+src/numbers/real.o : src/numbers/real.cpp src/numbers/real.hpp src/utils.hpp
+src/numbers/round.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.cpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/property.hpp src/utils.hpp
+src/parameters.o : config.h src/backends/backend.hpp src/parameters.cpp src/parameters.hpp
+src/parser/ast.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.cpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp src/utils.hpp
+src/parser/lexer.cpp : src/parser/lexer.lpp
+src/parser/lexer.o : src/numbers/interval.hpp src/parameters.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/lexer.cpp src/parser/parser.hpp src/proofs/dichotomy.hpp src/proofs/property.hpp
+src/parser/parser.cpp src/parser/parser.hpp : src/parser/parser.ypp
+src/parser/parser.o : src/numbers/interval.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/parser.cpp src/parser/parser.hpp src/proofs/dichotomy.hpp src/proofs/property.hpp
+src/parser/parser_aux.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/parser_aux.cpp src/parser/pattern.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/rewriting.hpp src/proofs/schemes.hpp
+src/parser/pattern.o : src/numbers/interval.hpp src/parser/ast_real.hpp src/parser/pattern.cpp src/parser/pattern.hpp src/proofs/property.hpp
+src/parser/ring.o : config.h src/numbers/interval.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/ring.cpp src/proofs/property.hpp
+src/proofs/basic_proof.o : src/numbers/interval.hpp src/numbers/interval_arith.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/pattern.hpp src/proofs/basic_proof.cpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp src/proofs/updater.hpp
+src/proofs/dichotomy.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.cpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp src/proofs/updater.hpp
+src/proofs/proof_graph.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.cpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp src/proofs/updater.hpp
+src/proofs/property.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.cpp src/proofs/property.hpp src/proofs/schemes.hpp
+src/proofs/rewriting.o : src/backends/backend.hpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/pattern.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/rewriting.cpp src/proofs/rewriting.hpp src/proofs/schemes.hpp src/proofs/updater.hpp src/utils.hpp
+src/proofs/schemes.o : src/backends/backend.hpp src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/parser/ast.hpp src/parser/ast_real.hpp src/parser/pattern.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.cpp src/proofs/schemes.hpp src/utils.hpp
+src/proofs/updater.o : src/numbers/interval.hpp src/numbers/interval_utility.hpp src/numbers/real.hpp src/numbers/round.hpp src/parser/ast_real.hpp src/proofs/dichotomy.hpp src/proofs/proof_graph.hpp src/proofs/property.hpp src/proofs/schemes.hpp src/proofs/updater.cpp src/proofs/updater.hpp
+testsuite/clean :

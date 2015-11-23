@@ -1,0 +1,143 @@
+<section>
+<title>Providing hints</title>
+
+<section id="hint-rewriting">
+<title>Rewriting rules</title>
+
+<para>Internally, Gappa tries to compute the range of mathematical terms. For
+example, if the tool has to bound the product of two factors, it will check if
+it knows the ranges of both factors. If it does, it will apply the theorem
+about real multiplication in order to compute the range of the product.</para>
+
+<para>Unfortunately, there may be some expressions that Gappa cannot bound
+tightly. This usually happens because it has no result on a sub-term or
+because the expression is badly correlated. In this case, the user can provide
+an intermediate expression with the following hint.</para>
+
+<programlisting language="gappa"><![CDATA[primary -> secondary;]]></programlisting>
+
+<para>If Gappa finds a property about the secondary expression, it will
+use it as if it was about the primary expression. This transformation is
+valid as long as both expressions are equal. So, when generating a
+theorem proof, Gappa adds this equality as a hypothesis. It is then up to
+the user to prove it in order to be able to apply the theorem.</para>
+
+<para>To detect mistyping early, Gappa checks if both expressions can be
+normalized to the same one according to field rules (and are therefore
+equal) and warn if they are not. (It will not generate a proof of their
+equality though.) Note that Gappa does not check if the divisors that
+appear in the expressions are always nonzero; it just warns about
+them.</para>
+
+<para>If an equality requires some conditions to be verified, they can
+be added to the rule:</para>
+<programlisting language="gappa"><![CDATA[sqrt(x * x) -> -x { x <= 0 };]]></programlisting>
+</section>
+
+<section id="hint-approx">
+<title>Approximated expressions</title>
+
+<para>As mentioned before, Gappa has an internal database of rewriting rules.
+Some of these rules need to know about accurate and approximate terms. Without
+this information, they do not match any expression. For example, Gappa will
+replace the term <code>B</code> by <code>b + -(b - B)</code> only it knows a
+term <code>b</code> that is an approximation of the term <code>B</code>.</para>
+
+<para>Gappa has two heuristics to detect terms that are approximations of other
+terms. First, rounded values are approximations of their non-rounded
+counterparts. Second, any absolute or relative error that appears as a
+hypothesis of a logical sub-formula will define a pair of accurate and
+approximate terms.</para>
+
+<para>Since these pairs create lots of already proved rewriting rules, it is
+helpful for the user to define its own pairs. This can be done with the
+following syntax.</para>
+
+<programlisting><![CDATA[approximate ~ accurate;]]></programlisting>
+
+<para>In the following example, the comments show two hints that could be added
+if they had not already been guessed by Gappa. In particular, the second one
+enables a rewriting rule that completes the proof.</para>
+
+<programlisting language="gappa"><![CDATA[@floor = int<dn>;
+{ x - y in [-0.1,0.1] -> floor(x) - y in ? }
+# floor(x) ~ x;
+# x ~ y;]]></programlisting>
+</section>
+
+<section id="hint-dichotomy">
+<title>Dichotomy search</title>
+
+<para>The last kind of hint can be used when Gappa is unable to prove a formula
+but would be able to prove it if the hypothesis ranges were not so wide. Such a
+failure is usually caused by a bad correlation between the sub-terms of the
+expressions. This can be solved by rewriting the expressions. But the failure
+can also happen when the proof of the formula is not the same everywhere on the
+domain, as in the following example. In both cases, the user can ask Gappa to
+split the ranges into tighter ranges and see if it helps proving the formula.</para>
+
+<programlisting language="gappa"><![CDATA[@rnd = float< ieee_32, ne >;
+x = rnd(x_);
+y = x - 1;
+z = x * (rnd(y) - y);
+{ x in [0,3] -> |z| in ? }]]></programlisting>
+
+<para>With this script, Gappa will answer that <texinline>|z| \le 3 \cdot
+2^{-24}</texinline>. This is not the best answer because Gappa does not notice
+that <code>rnd(y) - y</code> is always zero when <texinline>\frac{1}{2} \le x
+\le 3</texinline>. The user needs to ask for a bisection with respect to the
+expression <code>rnd(x_)</code>.</para>
+
+<para>There are three types of bisection. The first one splits an interval in
+as many equally wide sub-intervals as asked by the user. The second one splits
+an interval along the points provided by the user.</para>
+
+<programlisting language="gappa"><![CDATA[$ x in 6;               # split the range of "x" in six sub-intervals
+$ x in (0.5,1.9999999); # split the range of "x" in three sub-intervals, the middle one being [0.5,~2]
+$ x;                    # equivalent to: $ x in 4;]]></programlisting>
+
+<para>The third kind of bisection tries to find by dichotomy the best range
+split such that a goal of the logical formula holds true. This requires the
+range of this goal to be specified, and the enclosed expression has to be
+indicated on the left of the <code>$</code> symbol.</para>
+
+<programlisting language="gappa"><![CDATA[{ x in [0,3] -> |z| <= 1b-26 }
+|z| $ x;]]></programlisting>
+
+<para>Contrarily to the first two kinds of bisection, this third one keeps the
+range improvements only if the goal was finally reached. If there was a failure
+in doing so, all the improvements are discarded. Gappa will display the
+sub-range on which the goal was not proved. There is a failure when Gappa
+cannot prove the goal on a range and this range cannot be split into two half
+ranges, either because its internal precision is not enough anymore or because
+the maximum depth of dichotomy has been reached. This depth can be set with the
+<code>-Edichotomy=999</code> option.</para>
+
+<para>More than one bisection hint can be used. And hints of the third kind can
+try to satisfy more than one goal at once.</para>
+
+<programlisting language="gappa"><![CDATA[a, b, c $ u;
+a, d $ v;]]></programlisting>
+
+<para>These two hints will be used one after the other. In particular, none
+will be used when Gappa is doing a bisection with the other one. By adding
+terms on the right of the <code>$</code> symbol, more complex hints can be
+built. Beware of combinatorial explosions though. The following hint is an
+example of a complex bisection: it asks Gappa to find a set of sub-ranges on
+<code>u</code> such that the goal on <code>b</code> is satisfied when the range
+on <code>v</code> is split into three sub-intervals.</para>
+
+<programlisting language="gappa"><![CDATA[b $ u, v in 3]]></programlisting>
+
+<para>Rather than mentioning simple terms on the left-hand side of hints,
+one can also write a logical formula. As a consequence, Gappa no longer
+infers the termination condition from the goal but instead performs a
+bisection until the formula is satisfied. This is especially useful if
+no enclosures of the terms appear in the goal, or if the termination
+criteria is not even an expression enclosure.</para>
+
+<programlisting language="gappa"><![CDATA[rnd(a) = a $ u]]></programlisting>
+
+</section>
+
+</section>

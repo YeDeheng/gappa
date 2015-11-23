@@ -1,0 +1,56 @@
+AC_INIT([Gappa], [1.0.0],
+        [Guillaume Melquiond <guillaume.melquiond@inria.fr>],
+        [gappa])
+
+AC_PROG_CXX
+AC_PROG_LEX
+AC_PROG_YACC
+
+XSLTPROC=xsltproc
+AC_ARG_WITH([xsltproc], AS_HELP_STRING([--with-xsltproc=PATH], [location of the xsltproc binary (documentation)]),
+	[XSLTPROC="$withval"])
+AC_SUBST([XSLTPROC])
+
+DBLATEX=dblatex
+AC_ARG_WITH([dblatex], AS_HELP_STRING([--with-dblatex=PATH], [location of the dblatex binary (documentation)]),
+	[DBLATEX="$withval"])
+AC_SUBST([DBLATEX])
+
+AC_LANG(C++)
+AC_CHECK_LIB(gmp, __gmpz_init, ,
+AC_MSG_ERROR([ *** Unable to find GMP library (http://www.swox.com/gmp/)]))
+AC_CHECK_LIB(mpfr, mpfr_snprintf, ,
+AC_MSG_ERROR([ *** Unable to find MPFR (>=2.4) library (http://www.mpfr.org/)]))
+
+AC_MSG_CHECKING([for Boost (>=1.32)])
+AC_TRY_COMPILE([#include <boost/version.hpp>], [
+#if BOOST_VERSION >= 103200
+#else
+#  error Boost version is too old
+#endif], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])
+AC_MSG_ERROR([ *** Unable to find Boost library (http://www.boost.org/)])])
+
+AC_MSG_CHECKING([for tr1/unordered_map])
+AC_TRY_COMPILE([#include <tr1/unordered_map>], [
+std::tr1::unordered_map<int, double> toto],
+[AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_UMAP], [1], [Define to 1 if your Standard Library supports tr1/unordered_map.])], [AC_MSG_RESULT([no])])
+
+AC_MSG_NOTICE([building remake...])
+case `uname -s` in
+MINGW*)
+	$CXX -Wall -O2 -o remake.exe remake.cpp -lws2_32
+	if test $? != 0; then AC_MSG_FAILURE([failed]); fi
+	AC_SUBST([REMAKE], [./remake.exe])
+	;;
+*)
+	$CXX -Wall -O2 -o remake remake.cpp
+	if test $? != 0; then AC_MSG_FAILURE([failed]); fi
+	AC_SUBST([REMAKE], [./remake])
+	;;
+esac
+
+AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_FILES(stamp-config_h, [touch stamp-config_h])
+AC_CONFIG_FILES(Remakefile)
+AC_OUTPUT

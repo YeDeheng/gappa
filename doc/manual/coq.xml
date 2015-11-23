@@ -1,0 +1,83 @@
+<section>
+<title>Coq and Gappa</title>
+
+<para>The <ulink url="http://gappa.gforge.inria.fr/">Gappa Coq
+Library</ulink> adds a <code>gappa</code> tactic to the <ulink
+url="http://coq.inria.fr/">Coq Proof Assistant</ulink>. This tactic
+invokes Gappa to solve properties about floating-point or fixed-point
+arithmetic. It can also solve simple inequalities over real
+numbers.</para>
+
+<para>The tactic is provided by the <code>Gappa_tactic</code> module. It
+expects to find a Gappa executable (called <code>gappa</code>) in the
+user program path.</para>
+
+<programlisting language="coq"><![CDATA[Require Import Reals.
+Require Import Fcore.
+Require Import Gappa_tactic.
+Open Scope R_scope.
+
+Goal
+  forall x y : R,
+  3/4 <= x <= 3 ->
+  0 <= sqrt x <= 1775 * (powerRZ 2 (-10)).
+Proof.
+  gappa.
+Qed.]]></programlisting>
+
+<para>The tactic recognizes fully-applied <code>rounding_fixed</code> and
+<code>rounding_float</code> functions as rounding operators.</para>
+
+<para>The script below proves that the difference between two
+double precision floating-point numbers in <texinline>[\frac{52}{16},
+\frac{53}{16}]</texinline> and <texinline>[\frac{22}{16},
+\frac{30}{16}]</texinline> is exactly representable as a double-precision
+floating-point number. (Rounding direction does not matter for this
+example; it has been arbitrarily chosen as rounding toward zero.)</para>
+
+<programlisting language="coq"><![CDATA[Definition rnd := rounding_float rndZR 53 (-1074).
+
+Goal
+  forall a_ b_ a b : R,
+  a = rnd a_ ->
+  b = rnd b_ ->
+  52 / 16 <= a <= 53 / 16 ->
+  22 / 16 <= b <= 30 / 16 ->
+  rnd (a - b) = (a - b).
+Proof.
+  unfold rnd; gappa.
+Qed.]]></programlisting>
+
+<para>The tactic handles goals and hypotheses that are either equalities
+of real numbers, <texinline>e_1 = e_2</texinline>, or pairs of
+inequalities on real numbers, <texinline>b_1 \le e \le b_2</texinline>,
+or inequalities expressing relative errors, <texinline>|e_1 - e_2| \le
+b \cdot |e_2|</texinline>. For inequalities, the <texinline>b</texinline>
+bounds have to be explicit dyadic numbers. The tactic also recognizes
+properties written as <texinline>|e| \le b</texinline> as syntactic sugar
+for <texinline>0 \le |e| \le b</texinline>.</para>
+
+<para>The tactic is built on <ulink
+url="http://flocq.gforge.inria.fr/">Flocq's formalism</ulink> and uses
+the same rounding operators and formats. The previous goal could
+therefore have been written in a slightly more natural way.</para>
+
+<programlisting language="coq"><![CDATA[Definition format :=
+  generic_format radix2 (FLT_exp (-1074) 53).
+
+Goal
+  forall a b : R,
+  format a -> format b ->
+  52 / 16 <= a <= 53 / 16 ->
+  22 / 16 <= b <= 30 / 16 ->
+  format (a - b).
+Proof.
+  intros a b Ha Hb Ia Ib.
+  refine (sym_eq (_ : rnd (a - b) = a - b)).
+  revert Ia Ib.
+  replace a with (rnd a).
+  replace b with (rnd b).
+  unfold rnd ; gappa.
+Qed.]]></programlisting>
+
+</section>

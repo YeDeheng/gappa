@@ -1,0 +1,248 @@
+<section>
+<title>Syntax error messages</title>
+
+<section>
+<title>Error: foobar at line 17 column 42.</title>
+<para>The Bison front-end has detected a syntax error at the given location.
+The error message is usually unusable, so let us hope the location is enough
+for you to find what the problem is.</para>
+<programlisting language="gappa">f(x) = x + 1;</programlisting>
+<screen>Error: syntax error, unexpected '(', expecting FUNID or '=' at line 1 column 2</screen>
+</section>
+
+<section>
+<title>Error: unrecognized option 'bar'.</title>
+<para>Gappa was invoked with an unknown option.</para>
+<para>Variant: unrecognized option 'bar' at line 42. This error is
+displayed for options embedded in the script.</para>
+</section>
+
+<section>
+<title>Error: redefinition of identifier 'foo'...</title>
+<para>A symbol cannot be defined more than once, even if the right hand sides
+of every definitions are equivalent.</para>
+<programlisting language="gappa">a = 1;
+a = 1;</programlisting>
+<para>Nor can it be defined after being used as an unbound variable.</para>
+<programlisting language="gappa">b = a * 2;
+a = 1;</programlisting>
+</section>
+
+<section>
+<title>Error: rounding operator expected, got 'foo'...</title>
+<para>Only rounding operators (unary function close to the identity function)
+can be prepended to the equal sign in a definition.</para>
+<programlisting language="gappa"><![CDATA[x add_rel<25,-100>= 1;]]></programlisting>
+<screen><![CDATA[Error: rounding operator expected, got 'add_rel<25,-100>' at line 1 column 19]]></screen>
+</section>
+
+<section>
+<title>Error: invalid parameters for 'foo'...</title>
+<para>A function template has been instantiated with an incorrect number of
+parameters or with parameters of the wrong type.</para>
+<programlisting language="gappa"><![CDATA[x = float<ieee_32,0>(y);]]></programlisting>
+<screen>Error: invalid parameters for 'float' at line 1 column 20</screen>
+</section>
+
+<section>
+<title>Error: incorrect number of arguments for 'foo'...</title>
+<para>There are either less or more expressions between parentheses than
+expected by the function.</para>
+<programlisting language="gappa"><![CDATA[x = int<zr>(y, z);]]></programlisting>
+<screen><![CDATA[Error: incorrect number of arguments for 'fixed<0,zr>' at line 1 column 17]]></screen>
+</section>
+
+</section>
+
+<section>
+<title>Other error messages during parsing</title>
+
+<section>
+<title>Error: undefined intervals are restricted to conclusions.</title>
+<para>You are not allowed to use an interrogation mark for an interval that
+appears in negative position in the logical formula.</para>
+<programlisting language="gappa"><![CDATA[{ x in ? -> x + 1 in [0,1] }]]></programlisting>
+</section>
+
+<section>
+<title>Error: the range of foo is an empty interval.</title>
+<para>An interval has been interpreted as having reverted bounds.</para>
+<programlisting language="gappa"><![CDATA[{ x in [2,1] }]]></programlisting>
+<screen><![CDATA[Error: the range of x is an empty interval.]]></screen>
+<para>Interval bounds are replaced by binary floating-point numbers. As a
+consequence, Gappa can encounter an empty interval when it tightens a range
+appearing in a goal. For example, the empty set is the biggest representable
+interval that is a subset of the singleton {1.3}. So Gappa fails to prove the
+following property.</para>
+<programlisting language="gappa"><![CDATA[{ 1.3 in [1.3,1.3] }]]></programlisting>
+<screen><![CDATA[Error: the range of 13e-1 is an empty interval.]]></screen>
+</section>
+
+<section>
+<title>Error: zero appears as a denominator in a rewriting rule.</title>
+<para>Gappa has a detected that a divisor is trivially equal to zero in an
+expression that appears in a rewriting rule. This is most certainly an error.</para>
+<programlisting language="gappa"><![CDATA[{ 1 in ? }
+y -> y * (x - x) / (x - x);]]></programlisting>
+</section>
+
+</section>
+
+<section>
+<title>Proof failures</title>
+
+<section>
+<title>Error: no contradiction was found.</title>
+<para>The logical formula had no property in negative position or Gappa has
+discharged all of them, yet this was not sufficient to prove the formula.</para>
+<programlisting language="gappa"><![CDATA[{ x in [1,2] -> not x + 1 in [2,3] }]]></programlisting>
+<screen>Error: no contradiction was found.</screen>
+</section>
+
+<section>
+<title>Error: some enclosures were not satisfied.</title>
+<para>Only part of a conjunction of goals was proved to be true. Gappa was
+unable to prove some other expressions or formulas, which are displayed after
+the message.</para>
+<programlisting language="gappa"><![CDATA[{ x in [1,2] -> x + 1 in ? /\ x + 2 in [2,3] }]]></programlisting>
+<screen>Warning: case split on x + 2 has not produced any interesting new result.
+Results:
+  x + 1 in [2, 3]
+Error: some properties were not satisfied:
+  BND(x + 2), best: [3, 4]</screen>
+</section>
+
+</section>
+
+<section id="warning-messages1">
+<title>Warning messages during parsing</title>
+
+<section>
+<title>Warning: renaming identifier 'foo' as 'bar'...</title>
+<para>When a definition <code>foo = expr</code> is given to Gappa, the name
+<code>foo</code> is associated to the expression <code>expr</code>. This name
+is then used whenever Gappa outputs <code>expr</code>. If another definition
+<code>bar = expr</code> is later provided, the new name supersedes the name
+given previously.</para>
+<programlisting language="gappa">a = 42;
+b = 42;
+{ a - b in ? }</programlisting>
+<screen>Warning: renaming identifier 'a' as 'b' at line 2 column 7
+b - b in [0, 0]</screen>
+</section>
+
+<section>
+<title>Warning: although present in a quotient, the expression foo may not
+have been tested for non-zeroness.</title>
+<para>When Gappa verifies that both sides of a user rewriting rule are
+equivalent, it does not generate additional constraints to verify that
+denominators appearing in the expressions are not zero. For example, the rule
+<code>1 / (1 / x) -&gt; x</code> only applies when <code>x</code> is not zero;
+yet Gappa does not test for it.</para>
+<para>No warning messages are displayed when constraints are added to the
+rewriting rule (whether these constraints are sufficient or not).
+E.g. <code>1 / (1/ x) -&gt; x { x &lt;&gt; 0 }</code>.</para>
+<para>Option switch: <code>-W[no-]null-denominator</code>.</para>
+</section>
+
+<section>
+<title>Warning: foo and bar are not trivially equal.</title>
+<para>When Gappa verifies the rule <code>foo -&gt; bar</code>, it first
+performs the subtraction of both sides. Then it normalizes this expression in
+the field of polynomial fractions with integer coefficients. If this result is
+not zero, Gappa warns about it.</para>
+<para>As the normalization only deals with polynomials and integers, false
+positive may appear when the expressions involve numerical values or square
+roots or absolute values.</para>
+<programlisting language="gappa"><![CDATA[{ 1 in ? }
+x * (y - 2) -> x * y - x;  # not equal
+1b-2 -> 0.2 + 0.05;        # equal, but needs numerical computations
+sqrt(x * x) -> |x|;        # equal, but involves square root and absolute value]]>
+</programlisting>
+<screen>Warning: x * (y - 2) and x * y - x are not trivially equal.
+         Difference: -(x)
+Warning: 1b-2 and 2e-1 + 5e-2 are not trivially equal.
+         Difference: -(2e-1) - (5e-2) + (1b-2)
+Warning: sqrt(x * x) and |x| are not trivially equal.
+         Difference: (sqrt(x * x)) - (|x|)
+Results:
+  1 in [1, 1]</screen>
+<para>Option switch: <code>-W[no-]hint-difference</code>.</para>
+</section>
+
+<section>
+<title>Warning: bar is a variable without definition, yet it is unbound.</title>
+<para>Identifier <code>bar</code> neither represents an expression nor
+is it a sub-term of any of the bounded expressions of the logical property.
+This may mean an identifier was mistyped.</para>
+<programlisting language="gappa">{ x - x in ? }</programlisting>
+<screen>Warning: x is a variable without definition, yet it is unbound.</screen>
+<para>Option switch: <code>-W[no-]unbound-variable</code>.</para>
+</section>
+
+<section>
+<title>Warning: no path was found for foo.</title>
+<para>The expression <code>foo</code> appears in one of the goals, yet Gappa
+does not have any theorem that could be used to compute this expression or one
+of its sub-terms.</para>
+</section>
+
+</section>
+
+<section id="warning-messages2">
+<title>Warning messages during proof computation</title>
+
+<section>
+<title>Warning: when foo is in i1, bar cannot be proved.</title>
+<para>When Gappa applies a case splitting <code>bar $ foo</code>, it splits
+the interval of <code>foo</code> until the property about <code>bar</code>
+holds for any sub-interval. If the maximal dichotomy depth has been reached yet
+the property still does not hold, the warning message displays the failing
+sub-interval (the leftmost one).</para>
+<programlisting language="gappa"><![CDATA[{ x in [-2,1] -> x / x in [1,1] }
+x / x $ x;]]></programlisting>
+<screen>Warning: when x is in [-1b-99 {-1.57772e-30, -2^(-99)}, 1b-100 {7.88861e-31, 2^(-100)}], BND(x / x, [1, 1]) cannot be proved.
+Error: some properties were not satisfied:
+  BND(x / x)</screen>
+<para>Option switch: <code>-W[no-]dichotomy-failure</code>.</para>
+</section>
+
+<section>
+<title>Warning: case split on foo has not produced any interesting new result.</title>
+<para>This warning is displayed when Gappa is successful in finding a case
+split that satisfies the goals, yet the results obtained on the sub-intervals
+are not interesting: they have already been proved through a simpler analysis.</para>
+<programlisting language="gappa"><![CDATA[{ x in [1,2] -> x + 1 in ? }
+$ x;]]></programlisting>
+<screen>Warning: case split on x has not produced any interesting new result.
+Results:
+  x + 1 in [2, 3]</screen>
+<para>Option switch: <code>-W[no-]dichotomy-failure</code>.</para>
+</section>
+
+<section>
+<title>Warning: case split on foo has no range to split.</title>
+<para>This warning is displayed when Gappa is unable to find the initial range
+on which to split cases.</para>
+<programlisting language="gappa"><![CDATA[{ x in [-1,1] -> 1 in ? }
+$ 1 / x;]]></programlisting>
+<screen>Warning: case split on 1 / x has no range to split.
+Results:
+  1 in [1, 1]</screen>
+<para>Option switch: <code>-W[no-]dichotomy-failure</code>.</para>
+</section>
+
+<section>
+<title>Warning: case split on foo is not goal-driven anymore.</title>
+<para>This warning is displayed when Gappa is supposed to find the best case
+split for proving a property, yet it does not know the range for this property
+or it has already proved it.</para>
+<programlisting language="gappa"><![CDATA[{ x in [-1,1] -> x + 1 in ? }
+x + 1 $ x;]]></programlisting>
+<screen>Warning: case split on x is not goal-driven anymore.
+Results:
+  x + 1 in [0, 2]</screen>
+<para>Option switch: <code>-W[no-]dichotomy-failure</code>.</para>
+</section>
+
+</section>

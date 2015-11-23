@@ -1,0 +1,165 @@
+<section>
+<title>Comments and embedded options</title>
+
+<para>Comments begin with a sharp sign <code>#</code> and go till the end of
+the line. Comments beginning by <code>#@</code> are handled as embedded
+command-line options. All these comments are no different from a space
+character.</para>
+
+<para>Space, tabulation, and line-break characters are not significant, they
+at most act as identifier separators. In the definition part of a script, the
+<code>GE</code> is never matched, so no separator is needed between operators
+<code>&gt;</code> and <code>=</code>.</para>
+</section>
+
+<section>
+<title>Tokens and operator priority</title>
+
+<para>There are five composite operators: <code>/\</code> (<code>AND</code>)
+and <code>\/</code> (<code>OR</code>) and <code>-&gt;</code>
+(<code>IMPL</code>) and <code>&lt;=</code> (<code>LE</code>) and
+<code>&gt;=</code> (<code>GE</code>). And three keywords: <code>in</code>
+(<code>IN</code>) and <code>not</code> (<code>NOT</code>) and <code>sqrt</code>
+(<code>SQRT</code>).</para>
+
+<para>Numbers are either written with a binary representation, or with a
+decimal representation. In both representations, the <code>{integer}</code>
+parts are radix-10 natural numbers.</para>
+
+<programlisting><![CDATA[binary        {integer}([bB][-+]?{integer})?
+decimal       (({integer}(\.{integer}?)?)|(\.{integer}))([eE][-+]?{integer})?
+hexadecimal   0x(({hexa}(\.{hexa}?)?)|(\.{hexa}))([pP][-+]?{integer})?
+number        ({binary}|{decimal}|{hexadecimal})]]></programlisting>
+
+<para>These three expressions represent the same number: <code>57.5e-1</code>,
+<code>23b-2</code>, <code>0x5.Cp0</code>. They do not have the same semantic
+for Gappa though and a different property will be proved in the decimal case.
+Indeed, some decimal numbers cannot be expressed as a dyadic number and Gappa
+will have to harden the proof and add a layer to take this into account. In
+particular, the user should refrain from being inventive with the constant 1.
+For example, writing this constant as <code>00100.000e-2</code> may prevent
+some rewriting rules to be applied.</para>
+
+<para>Identifiers (<code>IDENT</code>) are matched by
+<code>{alpha}({alpha}|{digit}|_)*</code>.</para>
+
+<para>The associativity and priority of the operators in logical formulas is as
+follows. It is meant to match the usual conventions.</para>
+
+<programlisting><![CDATA[%right IMPL
+%left OR
+%left AND
+%left NOT]]></programlisting>
+
+<para>For the mathematical expressions, the priority are as follows. Note that
+<code>NEG</code> is the priority of the unary minus; this is the operator with
+the highest precedence.</para>
+
+<programlisting><![CDATA[%left '+' '-'
+%left '*' '/'
+%left NEG]]></programlisting>
+</section>
+
+<section>
+<title>Grammar</title>
+
+<programlisting><![CDATA[    0 $accept: BLOB $end
+
+    1 BLOB: BLOB1 HINTS
+
+    2 BLOB1: PROG '{' PROP '}'
+
+    3 PROP: REAL LE SNUMBER
+    4     | FIX '(' REAL ',' SINTEGER ')'
+    5     | FLT '(' REAL ',' INTEGER ')'
+    6     | REAL IN '[' SNUMBER ',' SNUMBER ']'
+    7     | REAL IN '?'
+    8     | REAL GE SNUMBER
+    9     | REAL RDIV REAL IN '[' SNUMBER ',' SNUMBER ']'
+   10     | '|' REAL RDIV REAL '|' LE NUMBER
+   11     | REAL RDIV REAL IN '?'
+   12     | REAL '=' REAL
+   13     | PROP AND PROP
+   14     | PROP OR PROP
+   15     | PROP IMPL PROP
+   16     | NOT PROP
+   17     | '(' PROP ')'
+
+   18 SNUMBER: NUMBER
+   19        | '+' NUMBER
+   20        | '-' NUMBER
+
+   21 INTEGER: NUMBER
+
+   22 SINTEGER: SNUMBER
+
+   23 FUNCTION_PARAM: SINTEGER
+   24               | IDENT
+
+   25 FUNCTION_PARAMS_AUX: FUNCTION_PARAM
+   26                    | FUNCTION_PARAMS_AUX ',' FUNCTION_PARAM
+
+   27 FUNCTION_PARAMS: /* empty */
+   28                | '<' FUNCTION_PARAMS_AUX '>'
+
+   29 FUNCTION: FUNID FUNCTION_PARAMS
+
+   30 EQUAL: '='
+   31      | FUNCTION '='
+
+   32 PROG: /* empty */
+   33     | PROG IDENT EQUAL REAL ';'
+   34     | PROG '@' IDENT '=' FUNCTION ';'
+   35     | PROG VARID
+   36     | PROG FUNID
+   37     | PROG '@' VARID
+   38     | PROG '@' FUNID
+
+   39 REAL: SNUMBER
+   40     | VARID
+   41     | IDENT
+   42     | FUNCTION '(' REALS ')'
+   43     | REAL '+' REAL
+   44     | REAL '-' REAL
+   45     | REAL '*' REAL
+   46     | REAL '/' REAL
+   47     | '|' REAL '|'
+   48     | SQRT '(' REAL ')'
+   49     | FMA '(' REAL ',' REAL ',' REAL ')'
+   50     | '(' REAL ')'
+   51     | '+' REAL
+   52     | '-' REAL
+
+   53 REALS: REAL
+   54      | REALS ',' REAL
+
+   55 DPOINTS: SNUMBER
+   56        | DPOINTS ',' SNUMBER
+
+   57 DVAR: REAL
+   58     | REAL IN INTEGER
+   59     | REAL IN '(' DPOINTS ')'
+
+   60 DVARS: DVAR
+   61      | DVARS ',' DVAR
+
+   62 PRECOND: REAL NE SINTEGER
+   63        | REAL LE SINTEGER
+   64        | REAL GE SINTEGER
+   65        | REAL '<' SINTEGER
+   66        | REAL '>' SINTEGER
+
+   67 PRECONDS_AUX: PRECOND
+   68             | PRECONDS_AUX ',' PRECOND
+
+   69 PRECONDS: /* empty */
+   70         | '{' PRECONDS_AUX '}'
+
+   71 HINTS: /* empty */
+   72      | HINTS REAL IMPL REAL PRECONDS ';'
+   73      | HINTS REALS '$' DVARS ';'
+   74      | HINTS PROP '$' DVARS ';'
+   75      | HINTS '$' DVARS ';'
+   76      | HINTS REAL '~' REAL ';']]></programlisting>
+
+</section>
